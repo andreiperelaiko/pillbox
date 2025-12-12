@@ -1,288 +1,547 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
-from datetime import datetime, time
+import re
 from src.db import (
-    create_user,
-    get_user,
-    get_user_by_email,
-    create_medication,
-    get_user_medications,
+    # Medications
+    get_all_medications,
     get_medication,
-    create_schedule,
-    get_medication_schedules,
-    log_medication_taken,
-    log_medication_missed,
-    get_medication_history,
-    get_user_medication_history,
-    add_guardian,
-    get_user_guardians,
-    create_notification,
-    get_user_notifications
+    create_medication,
+    update_medication,
+    delete_medication,
+    # Intakes
+    get_all_intakes,
+    get_intake,
+    create_intake,
+    update_intake,
+    delete_intake,
+    confirm_medication_in_intake,
+    # Caregivers
+    get_all_caregivers,
+    get_caregiver,
+    create_caregiver,
+    update_caregiver,
+    delete_caregiver,
+    # Settings
+    get_settings,
+    update_settings,
 )
 
 app = FastAPI(title="Pillbox API", version="1.0.0")
 
+# Настройка CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
-class UserCreate(BaseModel):
-    email: str
-    name: str
-    phone: Optional[str] = None
-    telegram: Optional[str] = None
 
-
-class UserResponse(BaseModel):
-    id: int
-    email: str
-    name: str
-    phone: Optional[str]
-    telegram: Optional[str]
-
+# ==================== MODELS ====================
 
 class MedicationCreate(BaseModel):
     name: str
-    description: Optional[str] = None
-    dosage: Optional[str] = None
-    unit: Optional[str] = None
-    quantity: Optional[int] = None
+    form: str
+    defaultAmount: Optional[int] = 1
+    imageUrl: Optional[str] = None
+
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Name is required')
+        return v.strip()
+
+    @field_validator('form')
+    @classmethod
+    def validate_form(cls, v):
+        valid_forms = ['таблетки', 'капсулы', 'жидкость', 'укол', 'порошок', 'мазь', 'спрей']
+        if v not in valid_forms:
+            raise ValueError(f'Invalid form. Must be one of: {", ".join(valid_forms)}')
+        return v
+
+    @field_validator('defaultAmount')
+    @classmethod
+    def validate_default_amount(cls, v):
+        if v is not None and (not isinstance(v, int) or v < 1):
+            raise ValueError('defaultAmount must be a positive number >= 1')
+        return v or 1
+
+    @field_validator('imageUrl')
+    @classmethod
+    def validate_image_url(cls, v):
+        return v.strip() if v else None
 
 
 class MedicationResponse(BaseModel):
-    id: int
-    user_id: int
+    id: str
     name: str
-    description: Optional[str]
-    dosage: Optional[str]
-    unit: Optional[str]
-    quantity: Optional[int]
+    form: str
+    defaultAmount: int
+    imageUrl: Optional[str]
+    createdAt: int
 
 
-class ScheduleCreate(BaseModel):
-    time: str
+class MedicationDose(BaseModel):
+    medicationId: str
+    amount: int
+    unit: str
+    confirmed: bool = False
+
+    @field_validator('amount')
+    @classmethod
+    def validate_amount(cls, v):
+        if not isinstance(v, int) or v < 1:
+            raise ValueError('amount must be a positive number >= 1')
+        return v
 
 
-class ScheduleResponse(BaseModel):
-    id: int
-    medication_id: int
-    time: str
+class IntakeCreate(BaseModel):
+    dateTime: int
+    medications: List[MedicationDose]
+    seriesId: Optional[str] = None
+
+    @field_validator('dateTime')
+    @classmethod
+    def validate_date_time(cls, v):
+        if not isinstance(v, int) or v <= 0:
+            raise ValueError('dateTime must be a valid positive timestamp')
+        return v
+
+    @field_validator('medications')
+    @classmethod
+    def validate_medications(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('medications array must not be empty')
+        return v
 
 
-class MedicationLogCreate(BaseModel):
-    scheduled_time: datetime
-    taken_at: Optional[datetime] = None
-    schedule_id: Optional[int] = None
+class IntakeResponse(BaseModel):
+    id: str
+    dateTime: int
+    medications: List[MedicationDose]
+    createdAt: int
+    seriesId: Optional[str] = None
 
 
-class MedicationLogResponse(BaseModel):
-    id: int
-    medication_id: int
-    schedule_id: Optional[int]
-    scheduled_time: datetime
-    taken_at: Optional[datetime]
+class CaregiverCreate(BaseModel):
+    name: str
+    phone: str
+    email: EmailStr
+    telegram: str
+
+    @field_validator('name', 'phone', 'telegram')
+    @classmethod
+    def validate_non_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Field must be non-empty')
+        return v.strip()
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        if not re.match(email_pattern, v):
+            raise ValueError('Invalid email format')
+        return v.strip()
 
 
-class GuardianAdd(BaseModel):
-    guardian_id: int
-    relationship: Optional[str] = None
+class CaregiverResponse(BaseModel):
+    id: str
+    name: str
+    phone: str
+    email: str
+    telegram: str
+    createdAt: int
 
 
-class NotificationCreate(BaseModel):
-    notification_type: str
-    title: str
-    message: str
-    guardian_id: Optional[int] = None
+class SettingsResponse(BaseModel):
+    notificationDelayMinutes: int
 
 
-class NotificationResponse(BaseModel):
-    id: int
-    type: str
-    title: str
-    message: str
-    user_id: Optional[int]
-    guardian_id: Optional[int]
-    created_at: Optional[datetime]
+class SettingsUpdate(BaseModel):
+    notificationDelayMinutes: Optional[int] = None
 
+    @field_validator('notificationDelayMinutes')
+    @classmethod
+    def validate_delay(cls, v):
+        if v is not None and (not isinstance(v, int) or v < 0):
+            raise ValueError('notificationDelayMinutes must be a non-negative number')
+        return v
+
+
+# ==================== ERROR HANDLERS ====================
+
+def error_response(message: str):
+    return {"error": message}
+
+
+# ==================== MEDICATIONS ENDPOINTS ====================
+
+@app.get("/api/medications", response_model=List[MedicationResponse])
+def get_medications():
+    """Получить список всех медикаментов"""
+    try:
+        return get_all_medications()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.get("/api/medications/{medication_id}", response_model=MedicationResponse)
+def get_medication_by_id(medication_id: str):
+    """Получить медикамент по ID"""
+    try:
+        medication = get_medication(medication_id)
+        if not medication:
+            raise HTTPException(status_code=404, detail=error_response("Medication not found"))
+        return medication
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.post("/api/medications", response_model=MedicationResponse, status_code=201)
+def create_medication_endpoint(medication: MedicationCreate):
+    """Создать новый медикамент"""
+    try:
+        medication_id = create_medication(
+            name=medication.name,
+            form=medication.form,
+            default_amount=medication.defaultAmount,
+            image_url=medication.imageUrl
+        )
+        created = get_medication(medication_id)
+        if not created:
+            raise HTTPException(status_code=500, detail=error_response("Failed to retrieve created medication"))
+        return created
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=error_response(str(e)))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.patch("/api/medications/{medication_id}", response_model=MedicationResponse)
+def update_medication_endpoint(medication_id: str, medication: dict):
+    """Обновить медикамент"""
+    try:
+        # Валидация form если передан
+        if 'form' in medication:
+            valid_forms = ['таблетки', 'капсулы', 'жидкость', 'укол', 'порошок', 'мазь', 'спрей']
+            if medication['form'] not in valid_forms:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response(f"Invalid form. Must be one of: {', '.join(valid_forms)}")
+                )
+        
+        # Валидация defaultAmount если передан
+        if 'defaultAmount' in medication:
+            if not isinstance(medication['defaultAmount'], int) or medication['defaultAmount'] < 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("defaultAmount must be a positive number >= 1")
+                )
+        
+        updated = update_medication(
+            medication_id=medication_id,
+            name=medication.get('name'),
+            form=medication.get('form'),
+            default_amount=medication.get('defaultAmount'),
+            image_url=medication.get('imageUrl')
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail=error_response("Medication not found"))
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.delete("/api/medications/{medication_id}", status_code=204)
+def delete_medication_endpoint(medication_id: str):
+    """Удалить медикамент"""
+    try:
+        deleted = delete_medication(medication_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail=error_response("Medication not found"))
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+# ==================== INTAKES ENDPOINTS ====================
+
+@app.get("/api/intakes", response_model=List[IntakeResponse])
+def get_intakes():
+    """Получить список всех приемов"""
+    try:
+        return get_all_intakes()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.get("/api/intakes/{intake_id}", response_model=IntakeResponse)
+def get_intake_by_id(intake_id: str):
+    """Получить прием по ID"""
+    try:
+        intake = get_intake(intake_id)
+        if not intake:
+            raise HTTPException(status_code=404, detail=error_response("Intake not found"))
+        return intake
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.post("/api/intakes", response_model=IntakeResponse, status_code=201)
+def create_intake_endpoint(intake: IntakeCreate):
+    """Создать новый прием"""
+    try:
+        # Валидация medications
+        if not intake.medications:
+            raise HTTPException(
+                status_code=400,
+                detail=error_response("medications array must not be empty")
+            )
+        
+        for med in intake.medications:
+            if not med.medicationId:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("Each medication must have a medicationId")
+                )
+            if not isinstance(med.amount, int) or med.amount < 1:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("Each medication must have a valid positive amount")
+                )
+            if not med.unit:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("Each medication must have a unit")
+                )
+        
+        medications_data = [med.model_dump() for med in intake.medications]
+        
+        intake_id = create_intake(
+            date_time=intake.dateTime,
+            medications=medications_data,
+            series_id=intake.seriesId
+        )
+        created = get_intake(intake_id)
+        if not created:
+            raise HTTPException(status_code=500, detail=error_response("Failed to retrieve created intake"))
+        return created
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=error_response(str(e)))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.patch("/api/intakes/{intake_id}", response_model=IntakeResponse)
+def update_intake_endpoint(intake_id: str, intake: dict):
+    """Обновить прием"""
+    try:
+        # Валидация dateTime если передан
+        if 'dateTime' in intake:
+            if not isinstance(intake['dateTime'], int) or intake['dateTime'] <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("dateTime must be a valid positive timestamp")
+                )
+        
+        # Валидация medications если передан
+        if 'medications' in intake:
+            if not isinstance(intake['medications'], list) or len(intake['medications']) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("medications must be a non-empty array")
+                )
+            
+            for med in intake['medications']:
+                if not med.get('medicationId'):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_response("Each medication must have a medicationId")
+                    )
+                if not isinstance(med.get('amount'), int) or med.get('amount', 0) < 1:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_response("Each medication must have a valid positive amount")
+                    )
+                if not med.get('unit'):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=error_response("Each medication must have a unit")
+                    )
+        
+        updated = update_intake(
+            intake_id=intake_id,
+            date_time=intake.get('dateTime'),
+            medications=intake.get('medications')
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail=error_response("Intake not found"))
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.delete("/api/intakes/{intake_id}", status_code=204)
+def delete_intake_endpoint(intake_id: str):
+    """Удалить прием"""
+    try:
+        deleted = delete_intake(intake_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail=error_response("Intake not found"))
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.patch("/api/intakes/{intake_id}/medications/{medication_id}/confirm", response_model=IntakeResponse)
+def confirm_medication_endpoint(intake_id: str, medication_id: str):
+    """Подтвердить прием медикамента в приеме"""
+    try:
+        updated = confirm_medication_in_intake(intake_id, medication_id)
+        if not updated:
+            raise HTTPException(
+                status_code=404,
+                detail=error_response("Intake not found or medication not found in intake")
+            )
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+# ==================== CAREGIVERS ENDPOINTS ====================
+
+@app.get("/api/caregivers", response_model=List[CaregiverResponse])
+def get_caregivers():
+    """Получить список всех опекунов"""
+    try:
+        return get_all_caregivers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.get("/api/caregivers/{caregiver_id}", response_model=CaregiverResponse)
+def get_caregiver_by_id(caregiver_id: str):
+    """Получить опекуна по ID"""
+    try:
+        caregiver = get_caregiver(caregiver_id)
+        if not caregiver:
+            raise HTTPException(status_code=404, detail=error_response("Caregiver not found"))
+        return caregiver
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.post("/api/caregivers", response_model=CaregiverResponse, status_code=201)
+def create_caregiver_endpoint(caregiver: CaregiverCreate):
+    """Создать нового опекуна"""
+    try:
+        caregiver_id = create_caregiver(
+            name=caregiver.name,
+            phone=caregiver.phone,
+            email=caregiver.email,
+            telegram=caregiver.telegram
+        )
+        created = get_caregiver(caregiver_id)
+        if not created:
+            raise HTTPException(status_code=500, detail=error_response("Failed to retrieve created caregiver"))
+        return created
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=error_response(str(e)))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.patch("/api/caregivers/{caregiver_id}", response_model=CaregiverResponse)
+def update_caregiver_endpoint(caregiver_id: str, caregiver: dict):
+    """Обновить опекуна"""
+    try:
+        # Валидация email если передан
+        if 'email' in caregiver:
+            email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+            if not re.match(email_pattern, caregiver['email']):
+                raise HTTPException(
+                    status_code=400,
+                    detail=error_response("Invalid email format")
+                )
+        
+        updated = update_caregiver(
+            caregiver_id=caregiver_id,
+            name=caregiver.get('name'),
+            phone=caregiver.get('phone'),
+            email=caregiver.get('email'),
+            telegram=caregiver.get('telegram')
+        )
+        if not updated:
+            raise HTTPException(status_code=404, detail=error_response("Caregiver not found"))
+        return updated
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.delete("/api/caregivers/{caregiver_id}", status_code=204)
+def delete_caregiver_endpoint(caregiver_id: str):
+    """Удалить опекуна"""
+    try:
+        deleted = delete_caregiver(caregiver_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail=error_response("Caregiver not found"))
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+# ==================== SETTINGS ENDPOINTS ====================
+
+@app.get("/api/settings", response_model=SettingsResponse)
+def get_settings_endpoint():
+    """Получить настройки"""
+    try:
+        return get_settings()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+@app.patch("/api/settings", response_model=SettingsResponse)
+def update_settings_endpoint(settings: SettingsUpdate):
+    """Обновить настройки"""
+    try:
+        return update_settings(settings.notificationDelayMinutes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=error_response(str(e)))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=error_response(str(e)))
+
+
+# ==================== ROOT ====================
 
 @app.get("/")
 def root():
     return {"message": "Pillbox API", "version": "1.0.0"}
-
-
-@app.post("/users", response_model=UserResponse, status_code=201)
-def create_user_endpoint(user: UserCreate):
-    try:
-        user_id = create_user(
-            email=user.email,
-            name=user.name,
-            phone=user.phone,
-            telegram=user.telegram
-        )
-        created_user = get_user(user_id)
-        if not created_user:
-            raise HTTPException(status_code=404, detail="User not found after creation")
-        return created_user
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/users/{user_id}", response_model=UserResponse)
-def get_user_endpoint(user_id: int):
-    user = get_user(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
-@app.get("/users/email/{email}", response_model=UserResponse)
-def get_user_by_email_endpoint(email: str):
-    user = get_user_by_email(email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
-@app.post("/users/{user_id}/medications", response_model=MedicationResponse, status_code=201)
-def create_medication_endpoint(user_id: int, medication: MedicationCreate):
-    try:
-        medication_id = create_medication(
-            user_id=user_id,
-            name=medication.name,
-            description=medication.description,
-            dosage=medication.dosage,
-            unit=medication.unit,
-            quantity=medication.quantity
-        )
-        created_medication = get_medication(medication_id)
-        if not created_medication:
-            raise HTTPException(status_code=404, detail="Medication not found after creation")
-        return created_medication
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/users/{user_id}/medications", response_model=List[MedicationResponse])
-def get_user_medications_endpoint(user_id: int):
-    medications = get_user_medications(user_id)
-    return medications
-
-
-@app.get("/medications/{medication_id}", response_model=MedicationResponse)
-def get_medication_endpoint(medication_id: int):
-    medication = get_medication(medication_id)
-    if not medication:
-        raise HTTPException(status_code=404, detail="Medication not found")
-    return medication
-
-
-@app.post("/medications/{medication_id}/schedules", response_model=ScheduleResponse, status_code=201)
-def create_schedule_endpoint(medication_id: int, schedule: ScheduleCreate):
-    try:
-        time_obj = datetime.strptime(schedule.time, "%H:%M").time()
-        schedule_id = create_schedule(medication_id=medication_id, time=time_obj)
-        schedules = get_medication_schedules(medication_id)
-        created_schedule = next((s for s in schedules if s['id'] == schedule_id), None)
-        if not created_schedule:
-            raise HTTPException(status_code=404, detail="Schedule not found after creation")
-        return {**created_schedule, 'time': str(created_schedule['time'])}
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/medications/{medication_id}/schedules", response_model=List[ScheduleResponse])
-def get_medication_schedules_endpoint(medication_id: int):
-    schedules = get_medication_schedules(medication_id)
-    return [{**s, 'time': str(s['time'])} for s in schedules]
-
-
-@app.post("/medications/{medication_id}/logs/taken", response_model=MedicationLogResponse, status_code=201)
-def log_medication_taken_endpoint(medication_id: int, log: MedicationLogCreate):
-    try:
-        log_id = log_medication_taken(
-            medication_id=medication_id,
-            scheduled_time=log.scheduled_time,
-            taken_at=log.taken_at,
-            schedule_id=log.schedule_id
-        )
-        history = get_medication_history(medication_id)
-        created_log = next((l for l in history if l['id'] == log_id), None)
-        if not created_log:
-            raise HTTPException(status_code=404, detail="Log not found after creation")
-        return created_log
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.post("/medications/{medication_id}/logs/missed", response_model=MedicationLogResponse, status_code=201)
-def log_medication_missed_endpoint(medication_id: int, log: MedicationLogCreate):
-    try:
-        log_id = log_medication_missed(
-            medication_id=medication_id,
-            scheduled_time=log.scheduled_time,
-            schedule_id=log.schedule_id
-        )
-        history = get_medication_history(medication_id)
-        created_log = next((l for l in history if l['id'] == log_id), None)
-        if not created_log:
-            raise HTTPException(status_code=404, detail="Log not found after creation")
-        return created_log
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/medications/{medication_id}/logs", response_model=List[MedicationLogResponse])
-def get_medication_history_endpoint(medication_id: int, limit: Optional[int] = None):
-    history = get_medication_history(medication_id, limit=limit)
-    return history
-
-
-@app.get("/users/{user_id}/logs", response_model=List[dict])
-def get_user_medication_history_endpoint(user_id: int, days: Optional[int] = None):
-    history = get_user_medication_history(user_id, days=days)
-    return history
-
-
-@app.post("/users/{user_id}/guardians", status_code=201)
-def add_guardian_endpoint(user_id: int, guardian: GuardianAdd):
-    try:
-        link_id = add_guardian(
-            user_id=user_id,
-            guardian_id=guardian.guardian_id,
-            relationship=guardian.relationship
-        )
-        return {"id": link_id, "user_id": user_id, "guardian_id": guardian.guardian_id}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/users/{user_id}/guardians", response_model=List[dict])
-def get_user_guardians_endpoint(user_id: int):
-    guardians = get_user_guardians(user_id)
-    return guardians
-
-
-@app.post("/users/{user_id}/notifications", response_model=NotificationResponse, status_code=201)
-def create_notification_endpoint(user_id: int, notification: NotificationCreate):
-    try:
-        notification_id = create_notification(
-            notification_type=notification.notification_type,
-            message=notification.message,
-            title=notification.title,
-            user_id=user_id,
-            guardian_id=notification.guardian_id
-        )
-        notifications = get_user_notifications(user_id)
-        created_notification = next((n for n in notifications if n['id'] == notification_id), None)
-        if not created_notification:
-            raise HTTPException(status_code=404, detail="Notification not found after creation")
-        return created_notification
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@app.get("/users/{user_id}/notifications", response_model=List[NotificationResponse])
-def get_user_notifications_endpoint(user_id: int, limit: Optional[int] = None):
-    notifications = get_user_notifications(user_id, limit=limit)
-    return notifications
-

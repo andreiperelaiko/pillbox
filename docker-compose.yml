@@ -1,24 +1,7 @@
 services:
-  db:
-    image: postgres:16
-    container_name: pillbox-db
+  app:
+    build: .
+    container_name: pillbox-app
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pillbox-data:/var/lib/postgresql/data
-
-  # Раскомментируйте для запуска приложения в Docker
-  # app:
-  #   build: .
-  #   container_name: pillbox-app
-  #   environment:
-  #     DATABASE_URL: ${DATABASE_URL}
-  #   depends_on:
-  #     - db
-
-volumes:
-  pillbox-data:
+      DATABASE_URL: ${DATABASE_URL}
+    network_mode: host

@@ -10,4 +10,5 @@ RUN uv sync --no-dev
 
 ENV PATH="/app/.venv/bin:${PATH}"
 COPY src ./src
-CMD ["python", "-m", "pillbox.main"]
+COPY run_api.py ./
+CMD ["python", "run_api.py"]

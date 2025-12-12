@@ -1,8 +1,10 @@
 import os
-from datetime import datetime, time, date
+import uuid
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 import psycopg
 from psycopg.rows import dict_row
+import json
 
 
 def get_conn():
@@ -25,271 +27,410 @@ def get_conn():
     )
 
 
-def create_user(
-    email: str,
-    name: str,
-    phone: Optional[str] = None,
-    telegram: Optional[str] = None
-) -> int:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO users (email, name, phone, telegram)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id
-            """, (email, name, phone, telegram))
-            user_id = cur.fetchone()[0]
-            conn.commit()
-            return user_id
+# ==================== MEDICATIONS ====================
 
-
-def get_user(user_id: int) -> Optional[Dict[str, Any]]:
+def get_all_medications() -> List[Dict[str, Any]]:
+    """Получить все медикаменты"""
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("""
-                SELECT id, email, name, phone, telegram
-                FROM users
-                WHERE id = %s
-            """, (user_id,))
-            return cur.fetchone()
-
-
-def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
-    with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("""
-                SELECT id, email, name, phone, telegram
-                FROM users
-                WHERE email = %s
-            """, (email,))
-            return cur.fetchone()
-
-
-def add_guardian(
-    user_id: int,
-    guardian_id: int,
-    relationship: Optional[str] = None
-) -> int:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO user_guardians (user_id, guardian_id, relationship)
-                VALUES (%s, %s, %s)
-                RETURNING id
-            """, (user_id, guardian_id, relationship))
-            link_id = cur.fetchone()[0]
-            conn.commit()
-            return link_id
-
-
-def get_user_guardians(user_id: int) -> List[Dict[str, Any]]:
-    with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("""
-                SELECT u.id, u.email, u.name, u.phone, u.telegram, ug.relationship
-                FROM user_guardians ug
-                JOIN users u ON ug.guardian_id = u.id
-                WHERE ug.user_id = %s
-            """, (user_id,))
+                SELECT 
+                    id::text,
+                    name,
+                    form,
+                    default_amount as "defaultAmount",
+                    image_url as "imageUrl",
+                    created_at as "createdAt"
+                FROM medications
+                ORDER BY created_at DESC
+            """)
             return cur.fetchall()
+
+
+def get_medication(medication_id: str) -> Optional[Dict[str, Any]]:
+    """Получить медикамент по ID"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT 
+                    id::text,
+                    name,
+                    form,
+                    default_amount as "defaultAmount",
+                    image_url as "imageUrl",
+                    created_at as "createdAt"
+                FROM medications
+                WHERE id = %s
+            """, (medication_id,))
+            return cur.fetchone()
 
 
 def create_medication(
-    user_id: int,
     name: str,
-    description: Optional[str] = None,
-    dosage: Optional[str] = None,
-    unit: Optional[str] = None,
-    quantity: Optional[int] = None
-) -> int:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO medications (user_id, name, description, dosage, unit, quantity)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id
-            """, (user_id, name, description, dosage, unit, quantity))
-            medication_id = cur.fetchone()[0]
-            conn.commit()
-            return medication_id
-
-
-def get_user_medications(user_id: int) -> List[Dict[str, Any]]:
-    with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("""
-                SELECT id, user_id, name, description, dosage, unit, quantity
-                FROM medications
-                WHERE user_id = %s
-                ORDER BY name
-            """, (user_id,))
-            return cur.fetchall()
-
-
-def get_medication(medication_id: int) -> Optional[Dict[str, Any]]:
-    with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("""
-                SELECT id, user_id, name, description, dosage, unit, quantity
-                FROM medications
-                WHERE id = %s
-            """, (medication_id,))
-            return cur.fetchone()
-
-
-def create_schedule(
-    medication_id: int,
-    time: time
-) -> int:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO medication_schedules (medication_id, time)
-                VALUES (%s, %s)
-                RETURNING id
-            """, (medication_id, time))
-            schedule_id = cur.fetchone()[0]
-            conn.commit()
-            return schedule_id
-
-
-def get_medication_schedules(medication_id: int) -> List[Dict[str, Any]]:
-    with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute("""
-                SELECT id, medication_id, time
-                FROM medication_schedules
-                WHERE medication_id = %s
-                ORDER BY time
-            """, (medication_id,))
-            return cur.fetchall()
-
-
-def log_medication_taken(
-    medication_id: int,
-    scheduled_time: datetime,
-    taken_at: Optional[datetime] = None,
-    schedule_id: Optional[int] = None
-) -> int:
-    if taken_at is None:
-        taken_at = datetime.now()
+    form: str,
+    default_amount: Optional[int] = None,
+    image_url: Optional[str] = None
+) -> str:
+    """Создать новый медикамент"""
+    medication_id = str(uuid.uuid4())
+    created_at = int(datetime.now().timestamp() * 1000)
+    default_amount = default_amount if default_amount is not None else 1
     
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO medication_logs 
-                    (medication_id, schedule_id, scheduled_time, taken_at)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO medications (id, name, form, default_amount, image_url, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (medication_id, schedule_id, scheduled_time, taken_at))
-            log_id = cur.fetchone()[0]
+            """, (medication_id, name.strip(), form, default_amount, image_url.strip() if image_url else None, created_at))
             conn.commit()
-            return log_id
+            return medication_id
 
 
-def log_medication_missed(
-    medication_id: int,
-    scheduled_time: datetime,
-    schedule_id: Optional[int] = None
-) -> int:
+def update_medication(
+    medication_id: str,
+    name: Optional[str] = None,
+    form: Optional[str] = None,
+    default_amount: Optional[int] = None,
+    image_url: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Обновить медикамент"""
+    updates = []
+    params = []
+    
+    if name is not None:
+        updates.append("name = %s")
+        params.append(name.strip())
+    if form is not None:
+        updates.append("form = %s")
+        params.append(form)
+    if default_amount is not None:
+        updates.append("default_amount = %s")
+        params.append(default_amount)
+    if image_url is not None:
+        updates.append("image_url = %s")
+        params.append(image_url.strip() if image_url else None)
+    
+    if not updates:
+        return get_medication(medication_id)
+    
+    params.append(medication_id)
+    
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                UPDATE medications
+                SET {', '.join(updates)}
+                WHERE id = %s
+            """, params)
+            conn.commit()
+            return get_medication(medication_id)
+
+
+def delete_medication(medication_id: str) -> bool:
+    """Удалить медикамент"""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM medications WHERE id = %s", (medication_id,))
+            deleted = cur.rowcount > 0
+            conn.commit()
+            return deleted
+
+
+# ==================== INTAKES ====================
+
+def get_all_intakes() -> List[Dict[str, Any]]:
+    """Получить все приемы"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT 
+                    id::text,
+                    date_time as "dateTime",
+                    medications,
+                    created_at as "createdAt",
+                    series_id::text as "seriesId"
+                FROM intakes
+                ORDER BY date_time DESC
+            """)
+            results = cur.fetchall()
+            # Преобразуем JSONB в Python dict
+            for result in results:
+                if result['medications']:
+                    result['medications'] = json.loads(result['medications']) if isinstance(result['medications'], str) else result['medications']
+            return results
+
+
+def get_intake(intake_id: str) -> Optional[Dict[str, Any]]:
+    """Получить прием по ID"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT 
+                    id::text,
+                    date_time as "dateTime",
+                    medications,
+                    created_at as "createdAt",
+                    series_id::text as "seriesId"
+                FROM intakes
+                WHERE id = %s
+            """, (intake_id,))
+            result = cur.fetchone()
+            if result and result['medications']:
+                result['medications'] = json.loads(result['medications']) if isinstance(result['medications'], str) else result['medications']
+            return result
+
+
+def create_intake(
+    date_time: int,
+    medications: List[Dict[str, Any]],
+    series_id: Optional[str] = None
+) -> str:
+    """Создать новый прием"""
+    intake_id = str(uuid.uuid4())
+    created_at = int(datetime.now().timestamp() * 1000)
+    medications_json = json.dumps(medications)
+    
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO medication_logs 
-                    (medication_id, schedule_id, scheduled_time, taken_at)
-                VALUES (%s, %s, %s, NULL)
+                INSERT INTO intakes (id, date_time, medications, created_at, series_id)
+                VALUES (%s, %s, %s::jsonb, %s, %s)
                 RETURNING id
-            """, (medication_id, schedule_id, scheduled_time))
-            log_id = cur.fetchone()[0]
+            """, (intake_id, date_time, medications_json, created_at, series_id))
             conn.commit()
-            return log_id
+            return intake_id
 
 
-def get_medication_history(
-    medication_id: int,
-    limit: Optional[int] = None
-) -> List[Dict[str, Any]]:
+def update_intake(
+    intake_id: str,
+    date_time: Optional[int] = None,
+    medications: Optional[List[Dict[str, Any]]] = None
+) -> Optional[Dict[str, Any]]:
+    """Обновить прием"""
+    # Получаем текущий прием для сохранения confirmed статусов
+    current_intake = get_intake(intake_id)
+    if not current_intake:
+        return None
+    
+    updates = []
+    params = []
+    
+    if date_time is not None:
+        updates.append("date_time = %s")
+        params.append(date_time)
+    
+    if medications is not None:
+        # Сохраняем confirmed статусы для существующих медикаментов
+        current_medications = {med['medicationId']: med for med in current_intake['medications']}
+        for med in medications:
+            if med['medicationId'] in current_medications:
+                med['confirmed'] = current_medications[med['medicationId']].get('confirmed', False)
+            else:
+                med['confirmed'] = med.get('confirmed', False)
+        
+        medications_json = json.dumps(medications)
+        updates.append("medications = %s::jsonb")
+        params.append(medications_json)
+    
+    if not updates:
+        return current_intake
+    
+    params.append(intake_id)
+    
     with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            query = """
-                SELECT id, medication_id, schedule_id, scheduled_time, taken_at
-                FROM medication_logs
-                WHERE medication_id = %s
-                ORDER BY scheduled_time DESC
-            """
-            if limit:
-                query += f" LIMIT {limit}"
-            
-            cur.execute(query, (medication_id,))
-            return cur.fetchall()
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                UPDATE intakes
+                SET {', '.join(updates)}
+                WHERE id = %s
+            """, params)
+            conn.commit()
+            return get_intake(intake_id)
 
 
-def get_user_medication_history(
-    user_id: int,
-    days: Optional[int] = None
-) -> List[Dict[str, Any]]:
+def delete_intake(intake_id: str) -> bool:
+    """Удалить прием"""
     with get_conn() as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            query = """
-                SELECT ml.id, ml.medication_id, ml.schedule_id, 
-                       ml.scheduled_time, ml.taken_at,
-                       m.name as medication_name
-                FROM medication_logs ml
-                JOIN medications m ON ml.medication_id = m.id
-                WHERE m.user_id = %s
-            """
-            params = [user_id]
-            
-            if days:
-                query += " AND ml.scheduled_time >= CURRENT_DATE - INTERVAL %s"
-                params.append(f"{days} days")
-            
-            query += " ORDER BY ml.scheduled_time DESC"
-            
-            cur.execute(query, params)
-            return cur.fetchall()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM intakes WHERE id = %s", (intake_id,))
+            deleted = cur.rowcount > 0
+            conn.commit()
+            return deleted
 
 
-def create_notification(
-    notification_type: str,
-    message: str,
-    title: str,
-    user_id: Optional[int] = None,
-    guardian_id: Optional[int] = None
-) -> int:
+def confirm_medication_in_intake(intake_id: str, medication_id: str) -> Optional[Dict[str, Any]]:
+    """Подтвердить прием медикамента в приеме"""
+    intake = get_intake(intake_id)
+    if not intake:
+        return None
+    
+    medications = intake['medications']
+    found = False
+    
+    for med in medications:
+        if med['medicationId'] == medication_id:
+            med['confirmed'] = True
+            found = True
+            break
+    
+    if not found:
+        return None
+    
+    medications_json = json.dumps(medications)
+    
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO notifications (type, message, title, user_id, guardian_id)
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id
-            """, (notification_type, message, title, user_id, guardian_id))
-            notification_id = cur.fetchone()[0]
+                UPDATE intakes
+                SET medications = %s::jsonb
+                WHERE id = %s
+            """, (medications_json, intake_id))
             conn.commit()
-            return notification_id
+            return get_intake(intake_id)
 
 
-def get_user_notifications(
-    user_id: int,
-    limit: Optional[int] = None
-) -> List[Dict[str, Any]]:
+# ==================== CAREGIVERS ====================
+
+def get_all_caregivers() -> List[Dict[str, Any]]:
+    """Получить всех опекунов"""
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            query = """
-                SELECT id, type, message, user_id, guardian_id, created_at
-                FROM notifications
-                WHERE user_id = %s
+            cur.execute("""
+                SELECT 
+                    id::text,
+                    name,
+                    phone,
+                    email,
+                    telegram,
+                    created_at as "createdAt"
+                FROM caregivers
                 ORDER BY created_at DESC
-            """
-            if limit:
-                query += f" LIMIT {limit}"
-            
-            cur.execute(query, (user_id,))
+            """)
             return cur.fetchall()
 
 
-def test_query():
+def get_caregiver(caregiver_id: str) -> Optional[Dict[str, Any]]:
+    """Получить опекуна по ID"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT 
+                    id::text,
+                    name,
+                    phone,
+                    email,
+                    telegram,
+                    created_at as "createdAt"
+                FROM caregivers
+                WHERE id = %s
+            """, (caregiver_id,))
+            return cur.fetchone()
+
+
+def create_caregiver(
+    name: str,
+    phone: str,
+    email: str,
+    telegram: str
+) -> str:
+    """Создать нового опекуна"""
+    caregiver_id = str(uuid.uuid4())
+    created_at = int(datetime.now().timestamp() * 1000)
+    
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT 1")
-            print(cur.fetchone())
+            cur.execute("""
+                INSERT INTO caregivers (id, name, phone, email, telegram, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (caregiver_id, name.strip(), phone.strip(), email.strip(), telegram.strip(), created_at))
+            conn.commit()
+            return caregiver_id
+
+
+def update_caregiver(
+    caregiver_id: str,
+    name: Optional[str] = None,
+    phone: Optional[str] = None,
+    email: Optional[str] = None,
+    telegram: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Обновить опекуна"""
+    updates = []
+    params = []
+    
+    if name is not None:
+        updates.append("name = %s")
+        params.append(name.strip())
+    if phone is not None:
+        updates.append("phone = %s")
+        params.append(phone.strip())
+    if email is not None:
+        updates.append("email = %s")
+        params.append(email.strip())
+    if telegram is not None:
+        updates.append("telegram = %s")
+        params.append(telegram.strip())
+    
+    if not updates:
+        return get_caregiver(caregiver_id)
+    
+    params.append(caregiver_id)
+    
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                UPDATE caregivers
+                SET {', '.join(updates)}
+                WHERE id = %s
+            """, params)
+            conn.commit()
+            return get_caregiver(caregiver_id)
+
+
+def delete_caregiver(caregiver_id: str) -> bool:
+    """Удалить опекуна"""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM caregivers WHERE id = %s", (caregiver_id,))
+            deleted = cur.rowcount > 0
+            conn.commit()
+            return deleted
+
+
+# ==================== SETTINGS ====================
+
+def get_settings() -> Dict[str, Any]:
+    """Получить настройки"""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT notification_delay_minutes as "notificationDelayMinutes"
+                FROM settings
+                WHERE id = 1
+            """)
+            result = cur.fetchone()
+            
+            # Если записи нет, возвращаем дефолтные значения
+            # (запись должна быть создана при инициализации БД)
+            if not result:
+                return {"notificationDelayMinutes": 30}
+            
+            return dict(result)
+
+
+def update_settings(notification_delay_minutes: Optional[int] = None) -> Dict[str, Any]:
+    """Обновить настройки"""
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            if notification_delay_minutes is not None:
+                # Используем UPSERT - создаст если нет, обновит если есть
+                cur.execute("""
+                    INSERT INTO settings (id, notification_delay_minutes)
+                    VALUES (1, %s)
+                    ON CONFLICT (id) 
+                    DO UPDATE SET notification_delay_minutes = EXCLUDED.notification_delay_minutes
+                """, (notification_delay_minutes,))
+            conn.commit()
+            return get_settings()
