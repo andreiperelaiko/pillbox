@@ -1,0 +1,175 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 8px;
+}
+
+@media (min-width: 768px) {
+  .overlay {
+    padding: 20px;
+  }
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 20px;
+  }
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 20px;
+  }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #333;
+  }
+}
+
+.addButtonContainer {
+  padding: 0 16px 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+@media (min-width: 768px) {
+  .addButtonContainer {
+    padding: 0 20px 16px 20px;
+  }
+}
+
+.addButton {
+  width: 100%;
+  background: #2196f3;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #1976d2;
+  }
+}
+
+.content {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding: 20px;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.intakesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.intakeWrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+}
+
+@media (min-width: 768px) {
+  .actions {
+    flex-direction: row;
+  }
+}
+
+.editButton,
+.deleteButton {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.editButton {
+  background: #2196f3;
+  color: white;
+
+  &:hover {
+    background: #1976d2;
+  }
+}
+
+.deleteButton {
+  background: #f44336;
+  color: white;
+
+  &:hover {
+    background: #d32f2f;
+  }
+}

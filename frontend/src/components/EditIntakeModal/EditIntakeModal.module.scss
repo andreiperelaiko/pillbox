@@ -1,0 +1,269 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 8px;
+}
+
+@media (min-width: 768px) {
+  .overlay {
+    padding: 20px;
+  }
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 20px;
+  }
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 20px;
+  }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #333;
+  }
+}
+
+.content {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .content {
+    padding: 20px;
+  }
+}
+
+.form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .form {
+    padding: 20px;
+    gap: 16px;
+  }
+}
+
+.message {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.dateTimeRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .dateTimeRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+.scopeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.scopeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.medications {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medicationFilters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+  .medicationFilters {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.medicationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.medicationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.medicationCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.medicationImage {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.medicationIcon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.medicationInfo {
+  flex: 1;
+}
+
+.medicationName {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.medicationForm {
+  font-size: 12px;
+  color: #666;
+}
+
+.doseInputs {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  margin-left: 28px;
+}
+
+.doseInputWrapper {
+  flex: 0 0 80px;
+
+  :global(.wrapper) {
+    margin-bottom: 0;
+  }
+}
+
+.doseUnit {
+  padding: 10px 12px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  min-width: 80px;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+@media (min-width: 768px) {
+  .actions {
+    flex-direction: row;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,61 @@
+.homePage {
+  padding: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .homePage {
+    padding: 20px;
+  }
+}
+
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.calendarSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.selectedDateIntakes {
+  margin-top: 0;
+}
+
+@media (min-width: 1024px) {
+  .mainLayout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .calendarSection {
+    flex: 0 0 500px;
+    min-width: 0;
+  }
+
+  .notifications {
+    flex: 1;
+    min-width: 0;
+  }
+}
