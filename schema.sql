@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
-    telegram VARCHAR(100)
+    telegram VARCHAR(100),
+    telegram_chat_id TEXT,
+    password_hash TEXT
 );
 
 CREATE TABLE IF NOT EXISTS user_guardians (
@@ -15,33 +17,28 @@ CREATE TABLE IF NOT EXISTS user_guardians (
 
 CREATE TABLE IF NOT EXISTS medications (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
-    dosage VARCHAR(100),
-    unit VARCHAR(50),
-    quantity INTEGER
+    description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS medication_schedules (
+CREATE TABLE IF NOT EXISTS dication_schedules (
     id SERIAL PRIMARY KEY,
     medication_id INTEGER NOT NULL REFERENCES medications(id) ON DELETE CASCADE,
-    time TIME NOT NULL
-);
-
--- История приёмов лекарств
-CREATE TABLE IF NOT EXISTS medication_logs (
-    id SERIAL PRIMARY KEY,
-    medication_id INTEGER NOT NULL REFERENCES medications(id) ON DELETE CASCADE,
-    schedule_id INTEGER REFERENCES medication_schedules(id) ON DELETE SET NULL,
-    scheduled_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    taken_at TIMESTAMP WITH TIME ZONE
+    intake_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    taken BOOLEAN NOT NULL DEFAULT FALSE,
+    dose TEXT
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    schedule_id INTEGER NOT NULL REFERENCES medication_schedules(id) ON DELETE CASCADE,
     guardian_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL,
-    message TEXT NOT NULL
+    text TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
