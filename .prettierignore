@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.vite
+*.log
+.DS_Store
+backend/data
+backend/.port
+*.min.js
+*.min.css
+

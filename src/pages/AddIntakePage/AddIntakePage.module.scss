@@ -1,0 +1,265 @@
+.page {
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page {
+    padding: 28px 24px;
+    padding-bottom: 28px;
+    width: 70%;
+    max-width: 70vw;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 22px;
+  }
+}
+
+.back {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.fieldError {
+  font-size: 12px;
+  color: #c62828;
+  line-height: 1.3;
+}
+
+.submitError {
+  font-size: 13px;
+  color: #c62828;
+  background: #ffebee;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ffcdd2;
+}
+
+.scheduleType {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  min-height: 44px;
+  padding: 4px 0;
+}
+
+.weekdays {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekdaysList {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekdayButton {
+  padding: 12px 18px;
+  min-height: 44px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.weekdayButton.selected {
+  background: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.medications {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medicationFilters {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 600px) {
+  .medicationFilters {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.medicationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.medicationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.medicationCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.medicationImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.medicationImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.medicationIcon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.medicationInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.medicationName {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.medicationForm {
+  font-size: 12px;
+  color: #666;
+}
+
+.doseInputs {
+  display: flex;
+  align-items: stretch;
+  margin-left: 60px;
+  min-width: 0;
+}
+
+.doseInputs > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.doseInputs :global(.wrapper) {
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .doseInputs {
+    margin-left: 0;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: 24px;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.actions button {
+  min-height: 48px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .actions button {
+    width: auto;
+    min-width: 120px;
+  }
+}

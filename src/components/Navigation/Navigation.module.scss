@@ -1,0 +1,162 @@
+// Верхняя шапка: логотип и на десктопе — текстовые ссылки
+.header {
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.logo {
+  flex-shrink: 0;
+}
+
+.logoLink {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.logoTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2196f3;
+  line-height: 1.2;
+}
+
+.logoTagline {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.2;
+}
+
+// Текстовые ссылки — только на десктопе
+.linksDesktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    justify-items: center;
+    align-items: center;
+  }
+
+  .logo {
+    justify-self: start;
+  }
+
+  .logoTitle {
+    font-size: 22px;
+  }
+
+  .logoTagline {
+    font-size: 13px;
+  }
+
+  .linksDesktop {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .linkDesktop {
+    padding: 16px 20px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    font-size: 16px;
+    -webkit-tap-highlight-color: transparent;
+
+    &:hover {
+      color: #2196f3;
+    }
+  }
+
+  .linkDesktop.active {
+    color: #2196f3;
+    border-bottom-color: #2196f3;
+  }
+}
+
+// Нижнее меню с иконками — на мобильном
+.bottomNav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  gap: 4px;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+  padding: 8px 4px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  padding-left: calc(4px + env(safe-area-inset-left));
+  padding-right: calc(4px + env(safe-area-inset-right));
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+@media (min-width: 768px) {
+  .bottomNav {
+    display: none;
+  }
+}
+
+.linkIcon {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 10px 4px;
+  min-height: 52px;
+  text-decoration: none;
+  color: #666;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+
+  &:hover {
+    color: #2196f3;
+  }
+}
+
+.linkIcon.active {
+  color: #2196f3;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.linkLabel {
+  display: none;
+}
