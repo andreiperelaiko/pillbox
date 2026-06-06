@@ -44,7 +44,7 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 12px;
-  color: #333;
+  color: var(--color-text);
 }
 
 @media (min-width: 1024px) {
@@ -104,8 +104,8 @@
 }
 
 .form {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
@@ -138,8 +138,8 @@
 }
 
 .card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -196,7 +196,7 @@
 
 .contact {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 4px;
 }
 
@@ -209,10 +209,10 @@
 .empty {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .error {
-  color: #c00;
+  color: var(--color-error-text);
   font-size: 14px;
 }

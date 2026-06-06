@@ -2,18 +2,25 @@
 [data-theme='light'] {
   --color-bg: #f5f5f5;
   --color-surface: #ffffff;
+  --color-surface-2: #f5f5f5;
+  --color-hover: #f0f0f0;
   --color-text: #333333;
   --color-text-muted: #666666;
   --color-border: #e0e0e0;
   --color-primary: #2196f3;
   --color-primary-hover: #1976d2;
+  --color-primary-soft: #e3f2fd;
   --color-danger: #f44336;
+  --color-success: #4caf50;
   --color-success-bg: #e8f5e9;
   --color-success-text: #2e7d32;
+  --color-warning: #ff9800;
   --color-warning-bg: #fff3e0;
   --color-warning-text: #e65100;
   --color-error-bg: #ffebee;
   --color-error-text: #c62828;
+  --color-muted-dot: #9e9e9e;
+  --shadow-color: rgba(0, 0, 0, 0.1);
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --line-height: 1.5;
@@ -29,38 +36,58 @@
 [data-theme='dark'] {
   --color-bg: #121212;
   --color-surface: #1e1e1e;
+  --color-surface-2: #2a2a2a;
+  --color-hover: #333333;
   --color-text: #f0f0f0;
   --color-text-muted: #b0b0b0;
   --color-border: #333333;
   --color-primary: #64b5f6;
   --color-primary-hover: #42a5f5;
+  --color-primary-soft: #1e3a5f;
   --color-danger: #ef5350;
+  --color-success: #66bb6a;
   --color-success-bg: #1b3d1f;
   --color-success-text: #a5d6a7;
+  --color-warning: #ffa726;
   --color-warning-bg: #4a3728;
   --color-warning-text: #ffcc80;
   --color-error-bg: #4a1f1f;
   --color-error-text: #ef9a9a;
+  --color-muted-dot: #757575;
+  --shadow-color: rgba(0, 0, 0, 0.6);
   --font-size-base: 14px;
   --font-size-lg: 16px;
   --line-height: 1.5;
 }
 
+@media (min-width: 768px) {
+  [data-theme='dark'] {
+    --font-size-base: 16px;
+  }
+}
+
 [data-theme='accessible'] {
   --color-bg: #000000;
   --color-surface: #000000;
+  --color-surface-2: #1a1a1a;
+  --color-hover: #333300;
   --color-text: #ffffff;
   --color-text-muted: #ffff00;
   --color-border: #ffff00;
   --color-primary: #ffff00;
   --color-primary-hover: #ffea00;
+  --color-primary-soft: #333300;
   --color-danger: #ff5252;
+  --color-success: #00ff00;
   --color-success-bg: #003300;
   --color-success-text: #00ff00;
+  --color-warning: #ffff00;
   --color-warning-bg: #333300;
   --color-warning-text: #ffff00;
   --color-error-bg: #330000;
   --color-error-text: #ff6666;
+  --color-muted-dot: #cccccc;
+  --shadow-color: rgba(255, 255, 0, 0.4);
   --font-size-base: 20px;
   --font-size-lg: 24px;
   --line-height: 1.7;

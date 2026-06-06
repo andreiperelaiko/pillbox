@@ -10,11 +10,14 @@ export default defineConfig({
       configureServer(server) {
         const fallback = (req: { url?: string }, _res: unknown, next: () => void) => {
           const url = (req.url ?? '').split('?')[0];
+          // Strip the /site base prefix before matching so Vite internals
+          // (/@react-refresh, /node_modules, assets) are detected under the base too.
+          const path = url.startsWith('/site/') ? url.slice('/site'.length) : url;
           if (
-            url.indexOf('/api') === 0 ||
-            url.indexOf('/@') === 0 ||
-            url.indexOf('/node_modules') === 0 ||
-            /\.[a-z0-9]+$/i.test(url)
+            path.indexOf('/api') === 0 ||
+            path.indexOf('/@') === 0 ||
+            path.indexOf('/node_modules') === 0 ||
+            /\.[a-z0-9]+$/i.test(path)
           ) {
             return next();
           }

@@ -58,22 +58,22 @@
 .label {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .fieldError {
   font-size: 12px;
-  color: #c62828;
+  color: var(--color-error-text);
   line-height: 1.3;
 }
 
 .submitError {
   font-size: 13px;
-  color: #c62828;
-  background: #ffebee;
+  color: var(--color-error-text);
+  background: var(--color-error-bg);
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #ffcdd2;
+  border: 1px solid var(--color-error-text);
 }
 
 .scheduleType {
@@ -113,9 +113,10 @@
 .weekdayButton {
   padding: 12px 18px;
   min-height: 44px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: white;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
@@ -123,9 +124,9 @@
 }
 
 .weekdayButton.selected {
-  background: #2196f3;
-  color: white;
-  border-color: #2196f3;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border-color: var(--color-primary);
 }
 
 .medications {
@@ -153,7 +154,7 @@
   max-height: min(50vh, 320px);
   overflow-y: auto;
   padding: 12px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   -webkit-overflow-scrolling: touch;
 }
@@ -163,7 +164,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: #f9f9f9;
+  background: var(--color-surface-2);
   border-radius: 8px;
 }
 
@@ -180,7 +181,7 @@
   height: 48px;
   border-radius: 8px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: var(--color-surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,7 +211,7 @@
 
 .medicationForm {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .doseInputs {
@@ -238,7 +239,7 @@
 .empty {
   text-align: center;
   padding: 24px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .actions {

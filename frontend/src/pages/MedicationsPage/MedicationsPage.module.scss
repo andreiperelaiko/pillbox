@@ -40,8 +40,8 @@
 }
 
 .filters {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
@@ -65,8 +65,8 @@
 }
 
 .form {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 24px;
@@ -77,11 +77,11 @@
 
 .submitError {
   font-size: 13px;
-  color: #c62828;
-  background: #ffebee;
+  color: var(--color-error-text);
+  background: var(--color-error-bg);
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #ffcdd2;
+  border: 1px solid var(--color-error-text);
 }
 
 .imageInput {
@@ -93,7 +93,7 @@
 .label {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .preview {
@@ -133,5 +133,5 @@
 .empty {
   text-align: center;
   padding: 40px;
-  color: #666;
+  color: var(--color-text-muted);
 }
