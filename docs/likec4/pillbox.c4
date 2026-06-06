@@ -1,0 +1,536 @@
+specification {
+  element person
+  element system
+  element container
+  element component
+  element database
+}
+
+model {
+  user = person 'Подопечный' {
+    summary 'Человек, который принимает лекарства'
+    description '''
+      Заходит на сайт, ведёт список лекарств и расписание приёмов.
+      Может **пригласить опекуна** (страница «Пригласить опекуна»).
+      Если кто-то хочет стать его опекуном — **подтверждает это в Telegram**.
+    '''
+  }
+
+  guardian = person 'Опекун' {
+    summary 'Близкий, который следит за приёмами'
+    description '''
+      Получает уведомления, если подопечный пропустил приём.
+      Может сам **запросить опекунство** (страница «Стать опекуном»).
+      Если его пригласили — **подтверждает приглашение в Telegram**.
+    '''
+  }
+
+  pillbox = system 'Таблетница' {
+    summary 'Напоминает о лекарствах и зовёт опекуна'
+    description '''
+      **Опекунство — в три этапа:**
+      1. Оба регистрируются на сайте.
+      2. Один отправляет запрос на сайте (двумя разными способами).
+      3. Второй подтверждает в боте @p111boxbot.
+
+      Связь **не создаётся сразу** после кнопки на сайте — только после «Принять» в Telegram.
+    '''
+  }
+
+  telegram = system 'Telegram' {
+    summary 'Бот @p111boxbot'
+    description '''
+      - `/start` — привязать Telegram к аккаунту на сайте;
+      - кнопки «Принять» / «Отклонить» — ответ на запрос опекунства;
+      - текстовые сообщения — пропущенные приёмы.
+    '''
+    style {
+      color muted
+    }
+  }
+
+  extend pillbox {
+    container spa 'Сайт' {
+      summary 'Интерфейс для пользователя'
+      description '''
+        **Две страницы для опекунства:**
+        - «Стать опекуном» — опекун вводит email подопечного;
+        - «Пригласить опекуна» — подопечный вводит email опекуна.
+
+        После отправки формы сайт показывает «запрос отправлен»,
+        но в списке опекунов человек **ещё не появится** — ждём Telegram.
+      '''
+      technology 'React, Vite, Redux'
+    }
+
+    container api 'Сервер API' {
+      summary 'Принимает запросы с сайта'
+      description '''
+        При опекунстве API **не создаёт связь сразу**.
+        Только записывает приглашение в `guardian_invites` со статусом `pending`.
+
+        Проверяет Telegram только у **подтверждающей** стороны:
+        - «Стать опекуном» → нужен Telegram у подопечного;
+        - «Пригласить опекуна» → нужен Telegram у опекуна.
+      '''
+      technology 'FastAPI, Python'
+
+      component auth 'Авторизация' {
+        summary 'Вход и регистрация'
+        technology 'auth.py'
+      }
+
+      component routes 'Маршруты API' {
+        summary 'HTTP-эндпоинты опекунов'
+        description '''
+          - `POST /guardians/attach/{id}` — способ А («Стать опекуном»)
+          - `POST /guardians/invite` — способ Б («Пригласить опекуна»)
+        '''
+        technology 'api.py'
+      }
+
+      component apiDb 'Работа с БД' {
+        summary 'create_guardian_invite'
+        technology 'db.py'
+      }
+
+      auth -> apiDb 'пользователи'
+      routes -> auth 'сессия'
+      routes -> apiDb 'приглашения'
+    }
+
+    container scheduler 'Планировщик' {
+      summary 'Ищет пропущенные приёмы'
+      description 'Создаёт записи в `notifications` (до 3 раз на приём).'
+      technology 'scheduler.py'
+    }
+
+    container mailer 'Почтовик' {
+      summary 'Email из очереди'
+      technology 'mailer.py'
+    }
+
+    container mailpit 'Mailpit' {
+      summary 'Тестовая почта (dev)'
+      style { color muted }
+    }
+
+    container bot 'Telegram-бот' {
+      summary 'Три фоновые задачи каждые ~10 сек'
+      description '''
+        Бот **не принимает решений на сайте** — он только:
+        1. слушает Telegram (/start, нажатия кнопок);
+        2. рассылает новые приглашения на опекунство;
+        3. рассылает напоминания о пропущенных приёмах.
+
+        Все данные — в PostgreSQL.
+      '''
+      technology 'telegram_bot.py'
+
+      component botPolling '1. Опрос Telegram' {
+        summary 'process_updates'
+        description '''
+          Читает входящие сообщения из Telegram API:
+          - `/start` → привязка `telegram_chat_id` к аккаунту;
+          - нажатие кнопки `gi:ok` / `gi:no` → ответ на приглашение.
+        '''
+      }
+
+      component botInvites '2. Рассылка приглашений' {
+        summary 'process_guardian_invites'
+        description '''
+          Ищет в БД приглашения `pending`, которые ещё не отправлены.
+          **Инициатору** — текст «ждём ответа» (без кнопок).
+          **Второму участнику** — текст + кнопки «Принять» / «Отклонить».
+        '''
+      }
+
+      component botReminders '3. Рассылка напоминаний' {
+        summary 'process_notifications'
+        description 'Берёт неотправленные `notifications` и шлёт текст в Telegram.'
+      }
+
+      component botDb 'Работа с БД' {
+        summary 'db.py'
+        technology 'db.py'
+      }
+
+      botPolling -> botDb 'сохраняет chat_id, ответы на кнопки'
+      botInvites -> botDb 'читает guardian_invites'
+      botReminders -> botDb 'читает notifications'
+      botPolling -> telegram 'getUpdates, answerCallback'
+      botInvites -> telegram 'sendMessage + кнопки'
+      botReminders -> telegram 'sendMessage'
+    }
+
+    database db 'База данных' {
+      summary 'PostgreSQL'
+      technology 'PostgreSQL 16'
+
+      component tbl_users 'users' {
+        summary 'Аккаунты + telegram_chat_id'
+      }
+
+      component tbl_guardian_invites 'guardian_invites' {
+        summary 'Ожидают ответа в Telegram'
+        description '''
+          | status | что значит |
+          |--------|------------|
+          | pending | ждём «Принять» или «Отклонить» |
+          | accepted | связь создана, можно удалить из invites |
+          | rejected | второй участник отказал |
+          | revoked | связь была, потом удалили |
+
+          `initiated_by`: кто нажал кнопку **на сайте** (guardian или patient).
+        '''
+      }
+
+      component tbl_user_guardians 'user_guardians' {
+        summary 'Опекун уже подключён'
+        description 'Появляется **только** после «Принять» в боте. Тогда опекун видит подопечного в списке «Мои подопечные».'
+      }
+
+      component tbl_schedules 'medication_schedules' {
+        summary 'Запланированные приёмы'
+      }
+
+      component tbl_notifications 'notifications' {
+        summary 'Очередь TG-сообщений'
+      }
+
+      component tbl_reminder_stats 'schedule_reminder_stats' {
+        summary 'Счётчик напоминаний (макс. 3)'
+      }
+
+      tbl_guardian_invites -> tbl_users 'подопечный и опекун'
+      tbl_user_guardians -> tbl_users 'активная связь'
+      tbl_notifications -> tbl_schedules 'о каком приёме'
+      tbl_notifications -> tbl_users 'кому слать'
+      tbl_reminder_stats -> tbl_schedules 'по приёму'
+      tbl_reminder_stats -> tbl_users 'по получателю'
+    }
+
+    spa -> api 'HTTPS'
+    api -> db 'SQL'
+    scheduler -> db 'создаёт notifications'
+    bot -> db 'SQL'
+    mailer -> db 'email_outbox'
+    mailer -> mailpit 'SMTP (dev)'
+  }
+
+  user -> pillbox 'сайт'
+  guardian -> pillbox 'сайт'
+  user -> telegram 'подтверждает / читает'
+  guardian -> telegram 'подтверждает / читает'
+}
+
+views {
+  view index {
+    title '1. Общая картина'
+    description 'ER-диаграмма БД: https://pi11box.ru/er/'
+    include *
+  }
+
+  view containers of pillbox {
+    title '2. Из чего состоит система'
+    include *
+  }
+
+  view botComponents of pillbox.bot {
+    title '3. Три задачи бота'
+    description '''
+      Бот крутится в цикле. На каждом проходе по очереди:
+      опрос Telegram → приглашения опекунов → напоминания о приёмах.
+    '''
+    include *
+  }
+
+  view databaseSchema of pillbox.db {
+    title '4. Таблицы опекунства и уведомлений'
+    description '''
+      **guardian_invites** — заявка отправлена, ждём Telegram.
+      **user_guardians** — опекун уже подключён.
+    '''
+    include
+      pillbox.db,
+      pillbox.db.*
+  }
+
+  // ─── Опекунство: от общего к частному ───
+
+  dynamic view guardianOverview {
+    title '5. Как добавить опекуна — вся цепочка'
+    description '''
+      **Главное правило:** на сайте кнопку нажимает один, в Telegram подтверждает **другой**.
+
+      | Этап | Где | Что происходит |
+      |------|-----|----------------|
+      | Подготовка | Сайт + бот | Оба зарегистрированы; у подтверждающего привязан Telegram |
+      | Заявка | Сайт | Один отправляет запрос → в БД `guardian_invites` (pending) |
+      | Уведомление | Бот | Пишет обоим; кнопки — только у второго |
+      | Решение | Telegram | Второй жмёт Принять → `user_guardians` |
+    '''
+    variant sequence
+
+    guardian -> pillbox.spa 'Способ А: «Стать опекуном»'
+    user -> pillbox.spa 'Способ Б: «Пригласить опекуна»'
+    pillbox.spa -> pillbox.api 'форма отправлена'
+    pillbox.api -> pillbox.db 'guardian_invites: pending'
+    pillbox.bot -> pillbox.db 'находит новое приглашение'
+    pillbox.bot -> telegram 'инициатору: «ждём ответа»'
+    pillbox.bot -> telegram 'второму: кнопки Принять / Отклонить'
+    user -> telegram 'подтверждает (если способ А)'
+    guardian -> telegram 'подтверждает (если способ Б)'
+    pillbox.bot -> pillbox.db 'user_guardians + accepted'
+
+    include
+      guardian,
+      user,
+      pillbox.spa,
+      pillbox.api,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view guardianPrerequisites {
+    title '6. Что нужно сделать до запроса опекунства'
+    description '''
+      Частая причина «не работает» — нет привязанного Telegram у того,
+      кто **должен подтвердить** запрос.
+
+      | Способ | Кто отправляет на сайте | Кому нужен Telegram |
+      |--------|-------------------------|---------------------|
+      | А «Стать опекуном» | опекун | **подопечному** |
+      | Б «Пригласить опекуна» | подопечный | **опекуну** |
+
+      Привязка: указать @username в настройках сайта → написать `/start` боту.
+    '''
+    variant sequence
+
+    user -> pillbox.spa '1. Регистрация на сайте'
+    guardian -> pillbox.spa '1. Регистрация на сайте'
+    user -> pillbox.spa '2. Настройки → указать @username Telegram'
+    guardian -> pillbox.spa '2. Настройки → указать @username Telegram'
+    user -> telegram '3. /start в @p111boxbot'
+    guardian -> telegram '3. /start в @p111boxbot'
+    pillbox.bot -> pillbox.db '4. Сохраняет telegram_chat_id'
+    pillbox.bot -> telegram '5. «Telegram привязан»'
+
+    include
+      user,
+      guardian,
+      pillbox.spa,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view guardianWayA {
+    title '7. Способ А: опекун → «Стать опекуном»'
+    description '''
+      **Маша** (опекун) хочет следить за **Бабушкой** (подопечной).
+
+      1. Маша на сайте: «Стать опекуном» → email Бабушки.
+      2. API проверяет: у Бабушки есть `telegram_chat_id`?
+      3. Бот пишет Маше: «ждём ответа» (без кнопок).
+      4. Бот пишет Бабушке: кнопки «Принять» / «Отклонить».
+      5. Бабушка жмёт «Принять» → Маша появляется в «Мои опекуны» у Бабушки,
+         Бабушка — в «Мои подопечные» у Маши.
+    '''
+    variant sequence
+
+    guardian -> pillbox.spa 'вводит email подопечного'
+    pillbox.spa -> pillbox.api 'POST /guardians/attach/{id}'
+    pillbox.api -> pillbox.db 'pending, initiated_by=guardian'
+    pillbox.bot -> pillbox.db 'SELECT pending invites'
+    pillbox.bot -> telegram 'опекуну: инфо без кнопок'
+    pillbox.bot -> telegram 'подопечному: Принять / Отклонить'
+    user -> telegram 'нажимает Принять'
+    pillbox.bot -> pillbox.db 'INSERT user_guardians'
+    pillbox.bot -> telegram 'обоим: «Опекунство установлено»'
+
+    include
+      guardian,
+      user,
+      pillbox.spa,
+      pillbox.api,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view guardianWayB {
+    title '8. Способ Б: подопечный → «Пригласить опекуна»'
+    description '''
+      **Бабушка** (подопечная) хочет, чтобы **Маша** (опекун) следила за ней.
+
+      Зеркало способа А: заявку отправляет подопечный, подтверждает опекун.
+    '''
+    variant sequence
+
+    user -> pillbox.spa 'вводит email опекуна'
+    pillbox.spa -> pillbox.api 'POST /guardians/invite'
+    pillbox.api -> pillbox.db 'pending, initiated_by=patient'
+    pillbox.bot -> pillbox.db 'SELECT pending invites'
+    pillbox.bot -> telegram 'подопечному: инфо без кнопок'
+    pillbox.bot -> telegram 'опекуну: Принять / Отклонить'
+    guardian -> telegram 'нажимает Принять'
+    pillbox.bot -> pillbox.db 'INSERT user_guardians'
+    pillbox.bot -> telegram 'обоим: «Опекунство установлено»'
+
+    include
+      user,
+      guardian,
+      pillbox.spa,
+      pillbox.api,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view guardianWhoGetsButtons {
+    title '9. Бот: кому приходят кнопки'
+    description '''
+      Логика `process_guardian_invites` — одна для обоих способов.
+
+      **Кнопки получает только тот, кто НЕ инициировал запрос на сайте.**
+    '''
+    variant sequence
+
+    pillbox.bot -> pillbox.db '1. Читает initiated_by из приглашения'
+    pillbox.bot -> pillbox.db '2. approver = противоположная сторона'
+    pillbox.bot -> telegram '3. Инициатору: текст, reply_markup = нет'
+    pillbox.bot -> telegram '4. Approver: текст + inline_keyboard'
+    pillbox.bot -> pillbox.db '5. Помечает *_telegram_notified = true'
+
+    include
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  // ─── Бот: сценарии ───
+
+  dynamic view botMainLoop {
+    title '10. Бот: главный цикл (каждые ~10 сек)'
+    description 'Метод `run()` — три задачи подряд, потом пауза.'
+    variant sequence
+
+    pillbox.bot -> telegram '① process_updates — /start и кнопки'
+    pillbox.bot -> pillbox.db '② process_guardian_invites — новые приглашения'
+    pillbox.bot -> telegram '② отправка сообщений опекунства'
+    pillbox.bot -> pillbox.db '③ process_notifications — пропущенные приёмы'
+    pillbox.bot -> telegram '③ отправка напоминаний'
+
+    include
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view botStartLink {
+    title '11. Бот: привязка Telegram (/start)'
+    description '''
+      Без этого шага бот не знает, в какой чат писать.
+      Username в настройках сайта и в Telegram должны совпадать.
+    '''
+    variant sequence
+
+    user -> telegram 'открывает @p111boxbot, пишет /start'
+    pillbox.bot -> telegram 'getUpdates — новое сообщение'
+    pillbox.bot -> pillbox.db 'ищет users по @username'
+    pillbox.bot -> pillbox.db 'не найден → ответ «зарегистрируйтесь»'
+    pillbox.bot -> pillbox.db 'найден → save_telegram_chat_id'
+    pillbox.bot -> telegram '«Telegram привязан к email»'
+
+    include
+      user,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view botCallbackAccept {
+    title '12. Бот: нажали «Принять»'
+    description 'callback_data = `gi:ok:{id}`'
+    variant sequence
+
+    user -> telegram 'нажимает Принять'
+    pillbox.bot -> telegram 'получает callback_query'
+    pillbox.bot -> pillbox.db 'respond_to_guardian_invite(approved=true)'
+    pillbox.bot -> pillbox.db 'INSERT user_guardians, status=accepted'
+    pillbox.bot -> telegram 'answerCallbackQuery: «Опекунство установлено»'
+    pillbox.bot -> telegram 'sendMessage обоим участникам'
+
+    include
+      user,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view botCallbackReject {
+    title '13. Бот: нажали «Отклонить»'
+    description 'callback_data = `gi:no:{id}`'
+    variant sequence
+
+    user -> telegram 'нажимает Отклонить'
+    pillbox.bot -> telegram 'получает callback_query'
+    pillbox.bot -> pillbox.db 'respond_to_guardian_invite(approved=false)'
+    pillbox.bot -> pillbox.db 'status = rejected'
+    pillbox.bot -> telegram 'answerCallbackQuery: «Запрос отклонён»'
+    pillbox.bot -> telegram 'разные тексты опекуну и подопечному'
+
+    include
+      user,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view botCallbackWrongPerson {
+    title '14. Бот: инициатор нажал кнопку (ошибка)'
+    description '''
+      Если тот, кто отправил запрос на сайте, жмёт «Принять» —
+      получает всплывающее: «Этот запрос подтверждает другой участник».
+      Связь **не** создаётся.
+    '''
+    variant sequence
+
+    guardian -> telegram 'инициатор жмёт Принять'
+    pillbox.bot -> pillbox.db 'respond_to_guardian_invite → not_approver'
+    pillbox.bot -> telegram '«Подтверждает другой участник»'
+    pillbox.bot -> pillbox.db 'guardian_invites всё ещё pending'
+
+    include
+      guardian,
+      pillbox.bot,
+      pillbox.db,
+      telegram
+  }
+
+  dynamic view botMissedIntake {
+    title '15. Бот: напоминание о пропущенном приёме'
+    description '''
+      Scheduler создаёт запись в `notifications`.
+      Бот забирает неотправленные и шлёт текст.
+      Не больше 3 напоминаний на один приём (см. `schedule_reminder_stats`).
+    '''
+    variant sequence
+
+    pillbox.scheduler -> pillbox.db 'приём не taken, прошла задержка'
+    pillbox.scheduler -> pillbox.db 'INSERT notifications'
+    pillbox.bot -> pillbox.db 'SELECT notifications WHERE telegram_sent_at IS NULL'
+    pillbox.bot -> telegram 'текст напоминания подопечному / опекунам'
+    pillbox.bot -> pillbox.db 'telegram_sent_at = now()'
+
+    include
+      pillbox.scheduler,
+      pillbox.bot,
+      pillbox.db,
+      telegram,
+      user,
+      guardian
+  }
+}

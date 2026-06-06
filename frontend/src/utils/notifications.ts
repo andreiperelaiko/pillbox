@@ -7,7 +7,7 @@ export const checkMissedIntakes = (
   if (!intakes || !Array.isArray(intakes)) return [];
   if (!settings) return [];
   const now = Date.now();
-  const delayMs = (settings.notificationDelayMinutes || 30) * 60 * 1000;
+  const delayMs = (settings.notificationDelayMinutes || 1) * 60 * 1000;
 
   return intakes.filter(intake => {
     const isPast = intake.dateTime < now;

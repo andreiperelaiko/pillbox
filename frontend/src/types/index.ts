@@ -74,6 +74,8 @@ export interface User {
   name?: string;
   telegram?: string;
   telegram_chat_id?: string;
+  email_verified?: boolean;
+  telegram_verified?: boolean;
 }
 
 export interface Caregiver {
@@ -85,8 +87,11 @@ export interface Caregiver {
   createdAt: number;
 }
 
+export type AppTheme = 'light' | 'dark' | 'accessible';
+
 export interface Settings {
   notificationDelayMinutes: number;
+  theme: AppTheme;
 }
 
 /** Опекун из GET /guardians (мои опекуны) */

@@ -10,7 +10,16 @@ export default defineConfig({
       configureServer(server) {
         const fallback = (req: { url?: string }, _res: unknown, next: () => void) => {
           const url = (req.url ?? '').split('?')[0];
-          if (url.indexOf('/api') === 0 || url.indexOf('/@') === 0 || url.indexOf('/node_modules') === 0 || /\.[a-z0-9]+$/i.test(url)) {
+          if (
+            url.indexOf('/api') === 0 ||
+            url.indexOf('/@') === 0 ||
+            url.indexOf('/node_modules') === 0 ||
+            /\.[a-z0-9]+$/i.test(url)
+          ) {
+            return next();
+          }
+          if (url === '/site' || url.startsWith('/site/')) {
+            req.url = '/site/index.html';
             return next();
           }
           req.url = '/index.html';
@@ -50,6 +59,6 @@ export default defineConfig({
       },
     },
   },
-  base: '/',
+  base: '/site/',
 });
 

@@ -69,6 +69,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
             .map(d => d.msg)
             .filter((m): m is string => typeof m === 'string');
           errorMessage = parts.length > 0 ? parts.join('. ') : errorMessage;
+        } else if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail;
         } else {
           errorMessage = (errorData.error as string) || errorMessage;
         }

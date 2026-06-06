@@ -8,7 +8,7 @@ export function toUserFriendlyError(message: string, status?: number): string {
   if (status !== undefined) {
     if (status === 401) return 'Сессия истекла. Войдите снова.';
     if (status === 403) return 'Недостаточно прав для этого действия.';
-    if (status === 404) return 'Не найдено.';
+    if (status === 404) return 'Пользователь с таким email не найден. Проверьте адрес и регистрацию.';
     if (status >= 500) return 'Ошибка сервера. Попробуйте позже.';
     if (status === 422 && (!message || message === 'Unprocessable Entity')) return 'Ошибка валидации. Проверьте введённые данные.';
     if (status >= 400) return message || 'Ошибка запроса. Проверьте данные.';
@@ -26,6 +26,8 @@ export function toUserFriendlyError(message: string, status?: number): string {
   if (lower.includes('invalid') && lower.includes('email')) return 'Некорректный email.';
   if (lower.includes('user already exists') || lower.includes('already registered'))
     return 'Пользователь с таким email уже зарегистрирован.';
+  if (lower.includes('guardian of yourself') || lower.includes('already a guardian for this user'))
+    return 'Нельзя стать опекуном самого себя. Введите email другого пользователя — вашего подопечного.';
   if (lower.includes('unauthorized') || lower.includes('not authenticated'))
     return 'Требуется вход в аккаунт.';
   if (lower.includes('network') || lower.includes('fetch') || lower.includes('failed to fetch'))

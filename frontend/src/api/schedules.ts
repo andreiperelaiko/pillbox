@@ -18,12 +18,17 @@ export interface MarkTakenPayload {
   schedule_id: number;
 }
 
+export interface DeleteSchedulePayload {
+  medication_id: number;
+  schedule_id: number;
+}
+
 /**
  * Расписания вложены в лекарство (общего эндпоинта /schedules у API нет):
  * GET  /medications/{medication_id}/schedules            — приёмы по лекарству
  * POST /medications/{medication_id}/schedules            — создать приём (201)
- * POST /medications/{medication_id}/schedules/mark-taken — отметить выполненным (200)
- * Удаления приёма API не предоставляет.
+ * POST   /medications/{medication_id}/schedules/mark-taken — отметить выполненным (200)
+ * DELETE /medications/{medication_id}/schedules/{schedule_id} — удалить приём (204)
  */
 export const schedulesApi = {
   /** Все приёмы пользователя = объединение расписаний по всем его лекарствам. */
@@ -46,4 +51,7 @@ export const schedulesApi = {
     api.post<ScheduleItem>(`/medications/${medication_id}/schedules/mark-taken`, {
       schedule_id,
     }),
+
+  delete: ({ medication_id, schedule_id }: DeleteSchedulePayload) =>
+    api.delete<void>(`/medications/${medication_id}/schedules/${schedule_id}`),
 };

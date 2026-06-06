@@ -8,11 +8,15 @@ export interface CreateMedicationPayload {
 }
 
 /**
- * GET /medications — список. GET /medications/{medication_id} — по ID. POST /medications — создать.
+ * GET    /medications — список
+ * GET    /medications/{medication_id} — по ID
+ * POST   /medications — создать
+ * DELETE /medications/{medication_id} — удалить (204)
  */
 export const medicationsApi = {
   getAll: () => api.get<MedicationApiItem[]>('/medications'),
   getById: (medicationId: number) => api.get<MedicationApiItem>(`/medications/${medicationId}`),
   create: (data: CreateMedicationPayload) =>
     api.post<MedicationApiItem>('/medications', data),
+  delete: (medicationId: number) => api.delete<void>(`/medications/${medicationId}`),
 };

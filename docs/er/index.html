@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Таблетница — ER-диаграмма</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #4da3ff;
+      --border: #2d3a4f;
+      --canvas-bg: #f4f6f9;
+      --users: #2d6a4f;
+      --guardian: #7b4fbf;
+      --meds: #b5651d;
+      --notify: #2a7a8f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    header h1 { margin: 0 0 0.35rem; font-size: 1.35rem; }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    nav {
+      margin-top: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    nav a { color: var(--accent); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 2.5rem;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.2rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .chip::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+
+    .chip.users::before { background: var(--users); }
+    .chip.guardian::before { background: var(--guardian); }
+    .chip.meds::before { background: var(--meds); }
+    .chip.notify::before { background: var(--notify); }
+
+    .arrow-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .arrow-hint svg { vertical-align: middle; }
+
+    .diagram-wrap {
+      background: var(--canvas-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: auto;
+    }
+
+    .canvas {
+      position: relative;
+      width: 1460px;
+      height: 1040px;
+      margin: 0 auto;
+    }
+
+    .edges-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 0;
+    }
+
+    .table {
+      position: absolute;
+      background: #fff;
+      border: 2px solid #b8c5d6;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      font-size: 12px;
+      color: #1a2332;
+      z-index: 1;
+    }
+
+    .table-header {
+      padding: 0.5rem 0.65rem;
+      border-bottom: 1px solid #dde4ec;
+      font-weight: 600;
+    }
+
+    .table-header .ru {
+      display: block;
+      font-weight: 400;
+      font-size: 11px;
+      color: #5a6d85;
+      margin-top: 0.15rem;
+    }
+
+    .table.users .table-header { border-top: 4px solid var(--users); }
+    .table.guardian .table-header { border-top: 4px solid var(--guardian); }
+    .table.meds .table-header { border-top: 4px solid var(--meds); }
+    .table.notify .table-header { border-top: 4px solid var(--notify); }
+
+    .col-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      border-bottom: 1px solid #eef2f6;
+      min-height: 26px;
+      align-items: center;
+    }
+
+    .col-row:last-child { border-bottom: none; }
+    .col-row.fk-target { background: #fffbe6; }
+    .col-row.fk-source { background: #f0f7ff; }
+
+    .col-name { font-family: ui-monospace, monospace; font-size: 11px; }
+    .col-badges { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .badge.pk { background: #fff3cd; color: #856404; }
+    .badge.fk { background: #d4e8ff; color: #0b4f8a; }
+    .badge.uk { background: #e8dff5; color: #5a3d8a; }
+
+    .notes { margin-top: 1.25rem; display: grid; gap: 0.85rem; }
+
+    .note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .note strong { color: var(--text); }
+
+    code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85em;
+      background: rgba(77, 163, 255, 0.12);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ER-диаграмма — Таблетница</h1>
+    <p>Стрелка идёт от внешнего ключа (FK) к первичному (PK). Линии только под 90°.</p>
+    <nav>
+      <a href="/">C4-архитектура</a>
+      <a href="/site/">Приложение</a>
+      <a href="/api/docs">API</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="legend">
+      <span class="chip users">Аккаунты</span>
+      <span class="chip guardian">Опекунство</span>
+      <span class="chip meds">Лекарства</span>
+      <span class="chip notify">Уведомления</span>
+      <span class="arrow-hint">
+        <svg width="52" height="14" aria-hidden="true">
+          <circle cx="5" cy="7" r="4" fill="#5a6d85"/>
+          <path d="M9 7 H38" stroke="#5a6d85" stroke-width="2"/>
+          <path d="M38 4 L44 7 L38 10 Z" fill="#5a6d85"/>
+        </svg>
+        точка = FK-колонка, стрелка = PK
+      </span>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="canvas" id="canvas">
+        <svg class="edges-layer" id="edges" viewBox="0 0 1460 1040" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-end" viewBox="0 0 10 10" refX="8" refY="5"
+              markerWidth="9" markerHeight="9" orient="auto">
+              <path d="M 0 1 L 8 5 L 0 9 Z" fill="context-stroke" stroke="none"/>
+            </marker>
+            <marker id="dot-start" viewBox="0 0 8 8" refX="4" refY="4"
+              markerWidth="7" markerHeight="7" orient="auto">
+              <circle cx="4" cy="4" r="3.5" fill="#fff" stroke="context-stroke" stroke-width="2"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note">
+        <strong>Как читать стрелки:</strong> линия выходит из цветной строки с <code>FK</code>
+        (внешний ключ) и стрелкой входит в <code>id</code> (или другой PK) родительской таблицы.
+        Например: <code>sessions.user_id</code> → <code>users.id</code>.
+      </div>
+      <div class="note">
+        Две линии из <code>user_guardians</code> в <code>users</code> — это не дубль:
+        <code>user_id</code> (подопечный) и <code>guardian_id</code> (опекун), оба ссылаются на <code>users</code>.
+      </div>
+    </div>
+  </main>
+
+  <footer>schema.sql · PostgreSQL 16</footer>
+
+  <script>
+    const HEADER_H = 44;
+    const ROW_H = 26;
+    const PAD = 14;
+
+    const COLORS = {
+      users: '#2d6a4f',
+      guardian: '#7b4fbf',
+      meds: '#b5651d',
+      notify: '#2a7a8f',
+    };
+
+    const tables = {
+      users: {
+        group: 'users', title: 'users', ru: 'Пользователи',
+        x: 610, y: 300, w: 240,
+        cols: [
+          ['id', 'PK'], ['email', 'UK'], ['name', ''],
+          ['telegram', 'UK'], ['telegram_chat_id', ''],
+          ['password_hash', ''], ['email_verified', ''],
+        ],
+      },
+      sessions: {
+        group: 'users', title: 'sessions', ru: 'Сессии входа',
+        x: 60, y: 120, w: 215,
+        cols: [
+          ['id', 'PK'], ['user_id', 'FK'], ['expires_at', ''],
+        ],
+      },
+      medications: {
+        group: 'meds', title: 'medications', ru: 'Лекарства',
+        x: 1090, y: 120, w: 225,
+        cols: [
+          ['id', 'PK'], ['user_id', 'FK'], ['name', ''],
+        ],
+      },
+      email_outbox: {
+        group: 'notify', title: 'email_outbox', ru: 'Очередь писем (без связей)',
+        x: 610, y: 40, w: 225,
+        cols: [
+          ['id', 'PK'], ['to_email', ''], ['subject', ''], ['sent_at', ''],
+        ],
+      },
+      guardian_invites: {
+        group: 'guardian', title: 'guardian_invites', ru: 'Заявка на опекунство',
+        x: 60, y: 330, w: 255,
+        cols: [
+          ['id', 'PK'],
+          ['patient_user_id', 'FK'],
+          ['guardian_user_id', 'FK'],
+          ['status', ''], ['initiated_by', ''],
+        ],
+      },
+      user_guardians: {
+        group: 'guardian', title: 'user_guardians', ru: 'Активная связь',
+        x: 60, y: 600, w: 255,
+        cols: [
+          ['id', 'PK'],
+          ['user_id', 'FK'],
+          ['guardian_id', 'FK'],
+          ['relationship', ''],
+        ],
+      },
+      medication_schedules: {
+        group: 'meds', title: 'medication_schedules', ru: 'Приёмы',
+        x: 1090, y: 340, w: 265,
+        cols: [
+          ['id', 'PK'],
+          ['medication_id', 'FK'],
+          ['user_id', 'FK'],
+          ['intake_at', ''], ['taken', ''],
+        ],
+      },
+      notifications: {
+        group: 'notify', title: 'notifications', ru: 'Сообщения в Telegram',
+        x: 1090, y: 600, w: 255,
+        cols: [
+          ['id', 'PK'],
+          ['schedule_id', 'FK'],
+          ['guardian_id', 'FK'],
+          ['text', ''], ['telegram_sent_at', ''],
+        ],
+      },
+      schedule_reminder_stats: {
+        group: 'notify', title: 'schedule_reminder_stats', ru: 'Счётчик напоминаний',
+        x: 1090, y: 840, w: 285,
+        cols: [
+          ['schedule_id', 'PK,FK'],
+          ['recipient_user_id', 'PK,FK'],
+          ['sent_count', ''], ['last_sent_at', ''],
+        ],
+      },
+    };
+
+    /**
+     * childCol → parentCol
+     * Стрелка: из таблицы с FK в таблицу с PK
+     */
+    const relations = [
+      { child: 'sessions', childCol: 1, parent: 'users', parentCol: 0, color: COLORS.users, sides: ['right', 'left'], via: 'lbus' },
+      { child: 'guardian_invites', childCol: 1, parent: 'users', parentCol: 0, color: COLORS.guardian, sides: ['right', 'left'], via: 'lbus' },
+      { child: 'guardian_invites', childCol: 2, parent: 'users', parentCol: 0, color: COLORS.guardian, sides: ['right', 'left'], via: 'lbus' },
+      { child: 'user_guardians', childCol: 1, parent: 'users', parentCol: 0, color: COLORS.guardian, sides: ['right', 'left'], via: 'lbus' },
+      { child: 'user_guardians', childCol: 2, parent: 'users', parentCol: 0, color: COLORS.guardian, sides: ['right', 'left'], via: 'lbus' },
+      { child: 'medications', childCol: 1, parent: 'users', parentCol: 0, color: COLORS.meds, sides: ['left', 'right'], via: 'rbus' },
+      { child: 'medication_schedules', childCol: 2, parent: 'users', parentCol: 0, color: COLORS.meds, sides: ['left', 'right'], via: 'rbus' },
+      { child: 'notifications', childCol: 2, parent: 'users', parentCol: 0, color: COLORS.notify, sides: ['left', 'right'], via: 'rbus' },
+      { child: 'schedule_reminder_stats', childCol: 1, parent: 'users', parentCol: 0, color: COLORS.notify, sides: ['left', 'right'], via: 'rbus' },
+      { child: 'medication_schedules', childCol: 1, parent: 'medications', parentCol: 0, color: COLORS.meds, sides: ['top', 'bottom'], via: 'vert' },
+      { child: 'notifications', childCol: 1, parent: 'medication_schedules', parentCol: 0, color: COLORS.notify, sides: ['top', 'bottom'], via: 'vert' },
+      { child: 'schedule_reminder_stats', childCol: 0, parent: 'medication_schedules', parentCol: 0, color: COLORS.notify, sides: ['right', 'right'], via: 'fbus' },
+    ];
+
+    // Вертикальные коридоры для линий в users (в зазорах слева/справа) и дальняя шина справа
+    const LBUS = 540, RBUS = 980, FBUS = 1410, LANE = 16;
+
+    function usersEntries() {
+      const ub = getBox('users');
+      const top = ub.y + HEADER_H + 8;
+      const bot = ub.y + ub.h - 12;
+      for (const side of ['left', 'right']) {
+        const edges = relations.filter((r) => r.parent === 'users' && r.sides[1] === side);
+        edges.sort((a, b) =>
+          portOut(getBox(a.child), a.childCol, a.sides[0]).y
+          - portOut(getBox(b.child), b.childCol, b.sides[0]).y);
+        edges.forEach((r, i) => {
+          r._lane = i;
+          r._ey = edges.length === 1
+            ? colCenterY(ub, 0)
+            : top + ((bot - top) * (i + 0.5)) / edges.length;
+        });
+      }
+    }
+
+    const fkHighlights = new Set(
+      relations.map((r) => `${r.child}:${r.childCol}`)
+    );
+    const pkTargets = new Set(
+      relations.map((r) => `${r.parent}:${r.parentCol}`)
+    );
+
+    function tableHeight(t) {
+      return HEADER_H + t.cols.length * ROW_H + 6;
+    }
+
+    function getBox(id) {
+      const t = tables[id];
+      return { id, ...t, h: tableHeight(t) };
+    }
+
+    function colCenterY(box, colIndex) {
+      return box.y + HEADER_H + colIndex * ROW_H + ROW_H / 2;
+    }
+
+    function colPortX(box, colIndex) {
+      const n = box.cols.length;
+      const t = n <= 1 ? 0.5 : (colIndex + 0.5) / n;
+      return box.x + box.w * t;
+    }
+
+    /** Точка снаружи таблицы, на уровне центра строки */
+    function portOut(box, colIndex, side) {
+      switch (side) {
+        case 'left': return { x: box.x - PAD, y: colCenterY(box, colIndex) };
+        case 'right': return { x: box.x + box.w + PAD, y: colCenterY(box, colIndex) };
+        case 'top': return { x: colPortX(box, colIndex), y: box.y - PAD };
+        case 'bottom': return { x: colPortX(box, colIndex), y: box.y + box.h + PAD };
+      }
+    }
+
+    /** Точка на самом краю таблицы (куда упирается стрелка/точка) */
+    function portEdge(box, colIndex, side, yOverride) {
+      const y = yOverride ?? colCenterY(box, colIndex);
+      switch (side) {
+        case 'left': return { x: box.x, y };
+        case 'right': return { x: box.x + box.w, y };
+        case 'top': return { x: colPortX(box, colIndex), y: box.y };
+        case 'bottom': return { x: colPortX(box, colIndex), y: box.y + box.h };
+      }
+    }
+
+    function buildEdgePoints(rel) {
+      const childBox = getBox(rel.child);
+      const parentBox = getBox(rel.parent);
+      const [childSide, parentSide] = rel.sides;
+
+      const start = portOut(childBox, rel.childCol, childSide);
+      const end = rel.parent === 'users'
+        ? portEdge(parentBox, rel.parentCol, parentSide, rel._ey)
+        : portEdge(parentBox, rel.parentCol, parentSide);
+      const endOut = portOut(parentBox, rel.parentCol, parentSide);
+
+      if (rel.via === 'lbus') {
+        const bx = LBUS - rel._lane * LANE;
+        return simplifyPath([start, { x: bx, y: start.y }, { x: bx, y: end.y }, end]);
+      }
+      if (rel.via === 'rbus') {
+        const bx = RBUS + rel._lane * LANE;
+        return simplifyPath([start, { x: bx, y: start.y }, { x: bx, y: end.y }, end]);
+      }
+      if (rel.via === 'fbus') {
+        return simplifyPath([start, { x: FBUS, y: start.y }, { x: FBUS, y: endOut.y }, endOut, end]);
+      }
+      const my = Math.round((start.y + endOut.y) / 2);
+      return simplifyPath([start, { x: start.x, y: my }, { x: endOut.x, y: my }, endOut, end]);
+    }
+
+    function simplifyPath(pts) {
+      const out = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        const prev = out[out.length - 1];
+        const cur = pts[i];
+        if (Math.hypot(cur.x - prev.x, cur.y - prev.y) < 2) continue;
+        out.push(cur);
+      }
+      return out;
+    }
+
+    function pointsToPath(pts) {
+      return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+    }
+
+    function renderTables() {
+      const canvas = document.getElementById('canvas');
+
+      for (const [id, t] of Object.entries(tables)) {
+        const el = document.createElement('div');
+        el.className = `table ${t.group}`;
+        el.style.left = `${t.x}px`;
+        el.style.top = `${t.y}px`;
+        el.style.width = `${t.w}px`;
+
+        const badge = (tags) => {
+          if (!tags) return '';
+          return tags.split(',').map((tag) => {
+            const tr = tag.trim();
+            const cls = tr.includes('PK') ? 'pk' : tr.includes('FK') ? 'fk' : tr.includes('UK') ? 'uk' : '';
+            return cls ? `<span class="badge ${cls}">${tr}</span>` : '';
+          }).join('');
+        };
+
+        el.innerHTML = `
+          <div class="table-header">${t.title}<span class="ru">${t.ru}</span></div>
+          ${t.cols.map(([name, tags], idx) => {
+            const fkSrc = fkHighlights.has(`${id}:${idx}`);
+            const pkTgt = pkTargets.has(`${id}:${idx}`);
+            const rowCls = fkSrc ? 'fk-source' : pkTgt ? 'fk-target' : '';
+            return `
+              <div class="col-row ${rowCls}" data-col="${idx}">
+                <span class="col-name">${name}</span>
+                <span class="col-badges">${badge(tags)}</span>
+              </div>`;
+          }).join('')}
+        `;
+        canvas.appendChild(el);
+      }
+    }
+
+    function renderEdges() {
+      const svg = document.getElementById('edges');
+      const ns = 'http://www.w3.org/2000/svg';
+      usersEntries();
+
+      relations.forEach((rel) => {
+        const pts = buildEdgePoints(rel);
+        if (pts.length < 2) return;
+
+        const tip = pts[pts.length - 1];
+        const tail = pts.length > 1 ? pts[pts.length - 2] : pts[0];
+
+        const line = document.createElementNS(ns, 'path');
+        line.setAttribute('d', pointsToPath(pts.slice(0, -1)));
+        line.setAttribute('fill', 'none');
+        line.setAttribute('stroke', rel.color);
+        line.setAttribute('stroke-width', '2.5');
+        line.setAttribute('marker-start', 'url(#dot-start)');
+        svg.appendChild(line);
+
+        const arrowLen = Math.hypot(tip.x - tail.x, tip.y - tail.y);
+        if (arrowLen > 4) {
+          const arrow = document.createElementNS(ns, 'line');
+          arrow.setAttribute('x1', tail.x.toFixed(1));
+          arrow.setAttribute('y1', tail.y.toFixed(1));
+          arrow.setAttribute('x2', tip.x.toFixed(1));
+          arrow.setAttribute('y2', tip.y.toFixed(1));
+          arrow.setAttribute('stroke', rel.color);
+          arrow.setAttribute('stroke-width', '2.5');
+          arrow.setAttribute('marker-end', 'url(#arrow-end)');
+          svg.appendChild(arrow);
+        }
+      });
+    }
+
+    usersEntries();
+    renderTables();
+    renderEdges();
+  </script>
+</body>
+</html>

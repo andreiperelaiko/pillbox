@@ -4,6 +4,7 @@ import { schedulesApi } from '../../api/schedules';
 import type { CreateSchedulePayload } from '../../api/schedules';
 import { ApiError } from '../../api/base';
 import { toUserFriendlyError } from '../../utils/errorMessages';
+import { deleteMedication } from './medicationsSlice';
 
 interface SchedulesState {
   items: ScheduleItem[];
@@ -52,11 +53,27 @@ export const markScheduleTaken = createAsyncThunk(
   }
 );
 
-// У API нет эндпоинта удаления приёма — сообщаем об этом понятно.
 export const deleteSchedule = createAsyncThunk(
   'schedules/delete',
-  async (_scheduleId: number, { rejectWithValue }) => {
-    return rejectWithValue('Удаление приёма не поддерживается сервером.');
+  async (scheduleId: number, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as { schedules: SchedulesState };
+      const item = state.schedules.items.find(i => i.id === scheduleId);
+      if (!item) {
+        return rejectWithValue('Приём не найден. Обновите страницу.');
+      }
+      await schedulesApi.delete({
+        medication_id: item.medication_id,
+        schedule_id: scheduleId,
+      });
+      return scheduleId;
+    } catch (error: unknown) {
+      if (error instanceof ApiError) {
+        return rejectWithValue(toUserFriendlyError(error.message, error.status));
+      }
+      const msg = error instanceof Error ? error.message : 'Не удалось удалить приём.';
+      return rejectWithValue(toUserFriendlyError(msg));
+    }
   }
 );
 
@@ -114,11 +131,23 @@ const schedulesSlice = createSlice({
           (action.error.message ? toUserFriendlyError(action.error.message) : null) ||
           'Не удалось отметить приём.';
       })
+      .addCase(deleteSchedule.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteSchedule.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(i => i.id !== action.payload);
+      })
       .addCase(deleteSchedule.rejected, (state, action) => {
+        state.loading = false;
         state.error =
           (action.payload as string) ||
           (action.error.message ? toUserFriendlyError(action.error.message) : null) ||
           'Не удалось удалить приём.';
+      })
+      .addCase(deleteMedication.fulfilled, (state, action) => {
+        state.items = state.items.filter(item => item.medication_id !== action.payload);
       });
   },
 });

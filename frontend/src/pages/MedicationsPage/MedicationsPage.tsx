@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
-import { createMedication } from '../../store/slices/medicationsSlice';
+import { createMedication, deleteMedication } from '../../store/slices/medicationsSlice';
 import { MedicationCard } from '../../components/MedicationCard/MedicationCard';
 import { Button } from '../../components/Button/Button';
 import { Input } from '../../components/Input/Input';
+import { ConfirmModal } from '../../components/ConfirmModal/ConfirmModal';
 import {
   validateMedicationName,
   validateDescription,
@@ -26,6 +27,7 @@ export const MedicationsPage = () => {
     description?: ValidationError;
   }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [medicationToDelete, setMedicationToDelete] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +57,21 @@ export const MedicationsPage = () => {
   const filteredMedications = (medications || []).filter(medication =>
     medication.name.toLowerCase().includes(nameFilter.toLowerCase())
   );
+
+  const medicationPendingDelete = medicationToDelete
+    ? (medications || []).find(m => m.id === medicationToDelete)
+    : null;
+
+  const handleConfirmDelete = async () => {
+    if (!medicationToDelete) return;
+    try {
+      await dispatch(deleteMedication(medicationToDelete)).unwrap();
+      setMedicationToDelete(null);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Не удалось удалить лекарство.');
+      setMedicationToDelete(null);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -101,10 +118,29 @@ export const MedicationsPage = () => {
           </div>
         ) : (
           filteredMedications.map(medication => (
-            <MedicationCard key={medication.id} medication={medication} />
+            <MedicationCard
+              key={medication.id}
+              medication={medication}
+              onDelete={() => setMedicationToDelete(medication.id)}
+            />
           ))
         )}
       </div>
+
+      <ConfirmModal
+        open={medicationToDelete !== null}
+        title="Удалить лекарство?"
+        message={
+          medicationPendingDelete
+            ? `«${medicationPendingDelete.name}» и все связанные приёмы будут удалены.`
+            : 'Лекарство и все связанные приёмы будут удалены.'
+        }
+        confirmLabel="Удалить"
+        cancelLabel="Отмена"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setMedicationToDelete(null)}
+      />
     </div>
   );
 };

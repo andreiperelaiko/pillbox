@@ -1,0 +1,96 @@
+name: pillbox-test
+
+services:
+  db:
+    image: postgres:16
+    container_name: pillbox-test-db
+    environment:
+      POSTGRES_USER: pillbox_test
+      POSTGRES_PASSWORD: pillbox_test
+      POSTGRES_DB: pillbox_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pillbox_test -d pillbox_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: pillbox-test-api
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: postgresql://pillbox_test:pillbox_test@db:5432/pillbox_test
+      POSTGRES_HOST: db
+      SESSION_COOKIE_PATH: /
+      SESSION_COOKIE_SECURE: "false"
+    ports:
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: pillbox-test-mailpit
+    ports:
+      - "8026:8025"
+      - "1026:1025"
+
+  mailer:
+    build: .
+    container_name: pillbox-test-mailer
+    command: python run_mailer.py
+    environment:
+      DATABASE_URL: postgresql://pillbox_test:pillbox_test@db:5432/pillbox_test
+      POSTGRES_HOST: db
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_FROM: test@pi11box.ru
+      MAILER_INTERVAL: 5
+    depends_on:
+      db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  scheduler:
+    build: .
+    container_name: pillbox-test-scheduler
+    command: python run_scheduler.py
+    environment:
+      DATABASE_URL: postgresql://pillbox_test:pillbox_test@db:5432/pillbox_test
+      POSTGRES_HOST: db
+      SCHEDULER_INTERVAL: 30
+      SCHEDULER_GRACE_MINUTES: 1
+      SCHEDULER_MAX_REMINDERS: 3
+      APP_TIMEZONE: Europe/Moscow
+    depends_on:
+      db:
+        condition: service_healthy
+
+  telegram-bot:
+    build: .
+    container_name: pillbox-test-telegram-bot
+    command: python run_bot.py
+    environment:
+      DATABASE_URL: postgresql://pillbox_test:pillbox_test@db:5432/pillbox_test
+      POSTGRES_HOST: db
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_POLL_INTERVAL: 10
+    depends_on:
+      db:
+        condition: service_healthy
+
+  test-seeder:
+    build: .
+    container_name: pillbox-test-seeder
+    command: python run_test_seeder.py
+    environment:
+      DATABASE_URL: postgresql://pillbox_test:pillbox_test@db:5432/pillbox_test
+      POSTGRES_HOST: db
+      SEED_INTERVAL_SECONDS: ${SEED_INTERVAL_SECONDS:-120}
+    depends_on:
+      db:
+        condition: service_healthy

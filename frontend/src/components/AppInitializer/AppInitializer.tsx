@@ -7,6 +7,7 @@ import { fetchWards } from '../../store/slices/wardsSlice';
 import { fetchMe, clearUser } from '../../store/slices/authSlice';
 import { setUnauthorizedHandler } from '../../api/unauthorizedHandler';
 import { checkHealth } from '../../api/health';
+import { appUrl } from '../../config';
 
 export const AppInitializer = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
@@ -15,15 +16,16 @@ export const AppInitializer = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     setUnauthorizedHandler(() => {
       dispatch(clearUser());
-      if (window.location.pathname !== '/auth') {
-        window.location.href = '/auth';
+      const authUrl = appUrl('/auth');
+      if (window.location.pathname !== authUrl) {
+        window.location.href = authUrl;
       }
     });
     return () => setUnauthorizedHandler(null);
   }, [dispatch]);
 
   useEffect(() => {
-    if (window.location.pathname === '/auth') return;
+    if (window.location.pathname === appUrl('/auth')) return;
     let cancelled = false;
     (async () => {
       await checkHealth();

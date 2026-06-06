@@ -30,7 +30,7 @@ export const attachAsGuardian = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await guardiansApi.attachAsGuardian(patientUserId, data);
+      return await guardiansApi.attachAsGuardian(patientUserId, data);
     } catch (error: unknown) {
       if (error instanceof ApiError) {
         return rejectWithValue(toUserFriendlyError(error.message, error.status));

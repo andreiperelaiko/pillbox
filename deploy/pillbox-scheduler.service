@@ -1,0 +1,16 @@
+[Unit]
+Description=Pillbox scheduler (missed intake notifications)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=asperelaiko
+WorkingDirectory=/home/asperelaiko/pillbox
+EnvironmentFile=/home/asperelaiko/pillbox/.env
+ExecStart=/home/asperelaiko/pillbox/.venv/bin/python run_scheduler.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

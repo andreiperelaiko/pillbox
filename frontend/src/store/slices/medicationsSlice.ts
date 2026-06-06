@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { Medication, MedicationApiItem } from '../../types';
 import { medicationsApi } from '../../api/medications';
+import { ApiError } from '../../api/base';
 import { toUserFriendlyError } from '../../utils/errorMessages';
 
 function mapApiItemToMedication(item: MedicationApiItem): Medication {
@@ -35,6 +36,22 @@ export const createMedication = createAsyncThunk(
   'medications/create',
   async (data: { name: string; description?: string | null }) => {
     return medicationsApi.create(data);
+  }
+);
+
+export const deleteMedication = createAsyncThunk(
+  'medications/delete',
+  async (medicationId: string, { rejectWithValue }) => {
+    try {
+      await medicationsApi.delete(Number(medicationId));
+      return Number(medicationId);
+    } catch (error: unknown) {
+      if (error instanceof ApiError) {
+        return rejectWithValue(toUserFriendlyError(error.message, error.status));
+      }
+      const msg = error instanceof Error ? error.message : 'Не удалось удалить лекарство.';
+      return rejectWithValue(toUserFriendlyError(msg));
+    }
   }
 );
 
@@ -75,6 +92,21 @@ const medicationsSlice = createSlice({
           (action.payload as string) ||
           (action.error.message ? toUserFriendlyError(action.error.message) : null) ||
           'Не удалось добавить лекарство.';
+      })
+      .addCase(deleteMedication.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteMedication.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(item => Number(item.id) !== action.payload);
+      })
+      .addCase(deleteMedication.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          (action.payload as string) ||
+          (action.error.message ? toUserFriendlyError(action.error.message) : null) ||
+          'Не удалось удалить лекарство.';
       });
   },
 });

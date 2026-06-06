@@ -1,6 +1,5 @@
-import { format } from 'date-fns';
-import ru from 'date-fns/locale/ru';
 import type { GroupedIntakeView, Medication } from '../../types';
+import { formatDateTimeLocal } from '../../utils/dateUtils';
 import styles from './IntakeCard.module.scss';
 import cn from 'classnames';
 
@@ -13,14 +12,16 @@ interface IntakeCardProps {
 
 export const IntakeCard = ({ intake, medications, onConfirm, onDelete }: IntakeCardProps) => {
   const dateTime = new Date(intake.dateTime);
+  const timeLabel = formatDateTimeLocal(dateTime, 'HH:mm');
+  const dateLabel = formatDateTimeLocal(dateTime, 'd MMMM');
   const isPast = dateTime < new Date();
   const allConfirmed = intake.medications.every(m => m.confirmed);
 
   return (
     <div className={cn(styles.card, { [styles.past]: isPast, [styles.confirmed]: allConfirmed })}>
       <div className={styles.header}>
-        <div className={styles.time}>{format(dateTime, 'HH:mm', { locale: ru })}</div>
-        <div className={styles.date}>{format(dateTime, 'd MMMM', { locale: ru })}</div>
+        <div className={styles.time}>{timeLabel}</div>
+        <div className={styles.date}>{dateLabel}</div>
       </div>
 
       <div className={styles.medications}>

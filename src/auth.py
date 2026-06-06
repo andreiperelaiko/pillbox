@@ -13,6 +13,7 @@ from src.db import get_user_by_session
 
 
 SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "pillbox_session")
+SESSION_COOKIE_PATH = os.getenv("SESSION_COOKIE_PATH", "/api")
 SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", "30"))
 SESSION_SHORT_EXPIRE_DAYS = int(os.getenv("SESSION_SHORT_EXPIRE_DAYS", "1"))
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
@@ -59,11 +60,12 @@ def set_session_cookie(response: Response, session_id: str, remember_me: bool = 
         httponly=True,
         secure=SESSION_COOKIE_SECURE,
         samesite="lax",
+        path=SESSION_COOKIE_PATH,
     )
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=SESSION_COOKIE_NAME)
+    response.delete_cookie(key=SESSION_COOKIE_NAME, path=SESSION_COOKIE_PATH)
 
 
 cookie_scheme = APIKeyCookie(name=SESSION_COOKIE_NAME, auto_error=False)

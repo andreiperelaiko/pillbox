@@ -9,6 +9,8 @@ load_dotenv()
 from src.telegram_bot import TelegramBot
 
 if __name__ == "__main__":
-    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    import os
+
+    interval = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.getenv("TELEGRAM_POLL_INTERVAL", "10"))
     bot = TelegramBot()
     bot.run(interval=interval)

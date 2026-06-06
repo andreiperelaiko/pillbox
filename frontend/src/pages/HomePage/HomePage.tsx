@@ -24,7 +24,7 @@ export const HomePage = () => {
     () =>
       checkMissedIntakes(
         groupedIntakes,
-        settings || { notificationDelayMinutes: 30 }
+        settings || { notificationDelayMinutes: 1 }
       ).sort((a, b) => a.dateTime - b.dateTime),
     [groupedIntakes, settings]
   );
@@ -47,7 +47,7 @@ export const HomePage = () => {
 
   const handleAddIntake = () => navigate('/intakes/add');
 
-  const settingsWithDelay = settings || { notificationDelayMinutes: 30 };
+  const settingsWithDelay = settings || { notificationDelayMinutes: 1 };
 
   return (
     <div className={styles.homePage}>

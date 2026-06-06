@@ -1,0 +1,540 @@
+{
+  "configuration" : {
+    "scope" : "SoftwareSystem"
+  },
+  "description" : "C4-архитектура приложения Таблетница",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedDate" : "2026-06-05T20:45:08Z",
+  "model" : {
+    "deploymentNodes" : [ {
+      "children" : [ {
+        "description" : "nginx",
+        "environment" : "Production",
+        "id" : "25",
+        "instances" : "1",
+        "name" : "nginxNode",
+        "properties" : {
+          "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.3ce045c1-f79b-4c1a-af79-47de7d82cf01"
+        },
+        "tags" : "Element,Deployment Node,nginx",
+        "technology" : "TLS termination, reverse proxy"
+      }, {
+        "containerInstances" : [ {
+          "containerId" : "5",
+          "environment" : "Production",
+          "id" : "27",
+          "instanceId" : 1,
+          "properties" : {
+            "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.3f63ea68-0aeb-45c6-9788-03569e4a1fc5.240bac9d-f409-4ba8-8430-1d4d92c56b95"
+          },
+          "relationships" : [ {
+            "description" : "Читает и записывает",
+            "destinationId" : "29",
+            "id" : "30",
+            "linkedRelationshipId" : "18",
+            "sourceId" : "27",
+            "technology" : "SQL/TCP"
+          } ],
+          "tags" : "Container Instance"
+        } ],
+        "description" : "pillbox-api",
+        "environment" : "Production",
+        "id" : "26",
+        "instances" : "1",
+        "name" : "apiService",
+        "properties" : {
+          "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.3f63ea68-0aeb-45c6-9788-03569e4a1fc5"
+        },
+        "tags" : "Element,Deployment Node,systemd",
+        "technology" : "FastAPI + uvicorn"
+      }, {
+        "containerInstances" : [ {
+          "containerId" : "16",
+          "environment" : "Production",
+          "id" : "29",
+          "instanceId" : 1,
+          "properties" : {
+            "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.5ef45574-f451-4f6c-8c43-cc9194bd5e93.0b1886fc-6892-40a5-bbf7-abb547e3cf58"
+          },
+          "tags" : "Container Instance"
+        } ],
+        "description" : "PostgreSQL",
+        "environment" : "Production",
+        "id" : "28",
+        "instances" : "1",
+        "name" : "dbService",
+        "properties" : {
+          "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.5ef45574-f451-4f6c-8c43-cc9194bd5e93"
+        },
+        "tags" : "Element,Deployment Node,PostgreSQL 16",
+        "technology" : "Хранение данных"
+      }, {
+        "containerInstances" : [ {
+          "containerId" : "12",
+          "environment" : "Production",
+          "id" : "32",
+          "instanceId" : 1,
+          "properties" : {
+            "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.fbfa5105-3487-4964-8c27-0b317fba8d7c.d3d6a4bf-0b1f-4c4c-abca-e4a81a75a8db"
+          },
+          "relationships" : [ {
+            "description" : "Читает и записывает",
+            "destinationId" : "29",
+            "id" : "33",
+            "linkedRelationshipId" : "19",
+            "sourceId" : "32",
+            "technology" : "SQL/TCP"
+          } ],
+          "tags" : "Container Instance"
+        } ],
+        "description" : "pillbox-bot",
+        "environment" : "Production",
+        "id" : "31",
+        "instances" : "1",
+        "name" : "botService",
+        "properties" : {
+          "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15.fbfa5105-3487-4964-8c27-0b317fba8d7c"
+        },
+        "tags" : "Element,Deployment Node,systemd (план)",
+        "technology" : "Telegram polling"
+      } ],
+      "description" : "Сервер",
+      "environment" : "Production",
+      "id" : "24",
+      "instances" : "1",
+      "name" : "server",
+      "properties" : {
+        "structurizr.dsl.identifier" : "production.1b82b322-1fc0-4b77-9523-e36018267b15"
+      },
+      "tags" : "Element,Deployment Node,Ubuntu",
+      "technology" : "Yandex Cloud VM"
+    } ],
+    "people" : [ {
+      "description" : "Принимает лекарства по расписанию",
+      "id" : "1",
+      "name" : "Пользователь",
+      "properties" : {
+        "structurizr.dsl.identifier" : "user"
+      },
+      "relationships" : [ {
+        "description" : "Использует",
+        "destinationId" : "3",
+        "id" : "21",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "description" : "Получает уведомления о пропущенных приёмах",
+      "id" : "2",
+      "name" : "Опекун",
+      "properties" : {
+        "structurizr.dsl.identifier" : "guardian"
+      },
+      "relationships" : [ {
+        "description" : "Читает уведомления",
+        "destinationId" : "20",
+        "id" : "22",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "containers" : [ {
+        "description" : "Интерфейс пользователя",
+        "documentation" : { },
+        "id" : "4",
+        "name" : "Web-клиент",
+        "properties" : {
+          "structurizr.dsl.identifier" : "pillbox.spa"
+        },
+        "relationships" : [ {
+          "description" : "Вызывает",
+          "destinationId" : "5",
+          "id" : "17",
+          "sourceId" : "4",
+          "tags" : "Relationship",
+          "technology" : "HTTPS/JSON"
+        } ],
+        "tags" : "Element,Container,Future",
+        "technology" : "SPA (план)"
+      }, {
+        "components" : [ {
+          "description" : "Регистрация, логин, cookie-сессии",
+          "documentation" : { },
+          "id" : "6",
+          "name" : "Auth",
+          "properties" : {
+            "structurizr.dsl.identifier" : "pillbox.api.auth"
+          },
+          "relationships" : [ {
+            "description" : "Использует",
+            "destinationId" : "8",
+            "id" : "9",
+            "sourceId" : "6",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "auth.py"
+        }, {
+          "description" : "REST-эндпоинты",
+          "documentation" : { },
+          "id" : "7",
+          "name" : "API Routes",
+          "properties" : {
+            "structurizr.dsl.identifier" : "pillbox.api.routes"
+          },
+          "relationships" : [ {
+            "description" : "Проверяет сессию",
+            "destinationId" : "6",
+            "id" : "10",
+            "sourceId" : "7",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Использует",
+            "destinationId" : "8",
+            "id" : "11",
+            "sourceId" : "7",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "api.py"
+        }, {
+          "description" : "Запросы к PostgreSQL",
+          "documentation" : { },
+          "id" : "8",
+          "name" : "Data Access",
+          "properties" : {
+            "structurizr.dsl.identifier" : "pillbox.api.dbAccess"
+          },
+          "tags" : "Element,Component",
+          "technology" : "db.py"
+        } ],
+        "description" : "Auth, medications, schedules, guardians, notifications",
+        "documentation" : { },
+        "id" : "5",
+        "name" : "REST API",
+        "properties" : {
+          "structurizr.dsl.identifier" : "pillbox.api"
+        },
+        "relationships" : [ {
+          "description" : "Читает и записывает",
+          "destinationId" : "16",
+          "id" : "18",
+          "sourceId" : "5",
+          "tags" : "Relationship",
+          "technology" : "SQL/TCP"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "FastAPI / Python"
+      }, {
+        "components" : [ {
+          "description" : "Polling, /start, отправка сообщений",
+          "documentation" : { },
+          "id" : "13",
+          "name" : "Bot Core",
+          "properties" : {
+            "structurizr.dsl.identifier" : "pillbox.bot.botCore"
+          },
+          "relationships" : [ {
+            "description" : "Использует",
+            "destinationId" : "14",
+            "id" : "15",
+            "sourceId" : "13",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "telegram_bot.py"
+        }, {
+          "description" : "Очередь уведомлений, chat_id",
+          "documentation" : { },
+          "id" : "14",
+          "name" : "Data Access",
+          "properties" : {
+            "structurizr.dsl.identifier" : "pillbox.bot.botDb"
+          },
+          "tags" : "Element,Component",
+          "technology" : "db.py"
+        } ],
+        "description" : "Привязка chat_id, опрос очереди уведомлений",
+        "documentation" : { },
+        "id" : "12",
+        "name" : "Telegram-бот",
+        "properties" : {
+          "structurizr.dsl.identifier" : "pillbox.bot"
+        },
+        "relationships" : [ {
+          "description" : "Читает и записывает",
+          "destinationId" : "16",
+          "id" : "19",
+          "sourceId" : "12",
+          "tags" : "Relationship",
+          "technology" : "SQL/TCP"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Python"
+      }, {
+        "description" : "users, sessions, medications, schedules, notifications",
+        "documentation" : { },
+        "id" : "16",
+        "name" : "База данных",
+        "properties" : {
+          "structurizr.dsl.identifier" : "pillbox.db"
+        },
+        "tags" : "Element,Container,Database",
+        "technology" : "PostgreSQL 16"
+      } ],
+      "description" : "Напоминания о приёме лекарств и уведомления опекунов",
+      "documentation" : { },
+      "id" : "3",
+      "name" : "Таблетница",
+      "properties" : {
+        "structurizr.dsl.identifier" : "pillbox"
+      },
+      "relationships" : [ {
+        "description" : "Отправляет уведомления",
+        "destinationId" : "20",
+        "id" : "23",
+        "sourceId" : "3",
+        "tags" : "Relationship",
+        "technology" : "HTTPS"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "description" : "Мессенджер для уведомлений опекунов",
+      "documentation" : { },
+      "id" : "20",
+      "name" : "Telegram",
+      "properties" : {
+        "structurizr.dsl.identifier" : "telegram"
+      },
+      "tags" : "Element,Software System,External"
+    } ]
+  },
+  "name" : "Pillbox",
+  "properties" : {
+    "structurizr.inspection.error" : "11",
+    "structurizr.dsl" : "d29ya3NwYWNlICJQaWxsYm94IiAiQzQt0LDRgNGF0LjRgtC10LrRgtGD0YDQsCDQv9GA0LjQu9C+0LbQtdC90LjRjyDQotCw0LHQu9C10YLQvdC40YbQsCIgewoKICAgICFpZGVudGlmaWVycyBoaWVyYXJjaGljYWwKCiAgICBtb2RlbCB7CiAgICAgICAgdXNlciA9IHBlcnNvbiAi0J/QvtC70YzQt9C+0LLQsNGC0LXQu9GMIiAi0J/RgNC40L3QuNC80LDQtdGCINC70LXQutCw0YDRgdGC0LLQsCDQv9C+INGA0LDRgdC/0LjRgdCw0L3QuNGOIgogICAgICAgIGd1YXJkaWFuID0gcGVyc29uICLQntC/0LXQutGD0L0iICLQn9C+0LvRg9GH0LDQtdGCINGD0LLQtdC00L7QvNC70LXQvdC40Y8g0L4g0L/RgNC+0L/Rg9GJ0LXQvdC90YvRhSDQv9GA0LjRkdC80LDRhSIKCiAgICAgICAgcGlsbGJveCA9IHNvZnR3YXJlU3lzdGVtICLQotCw0LHQu9C10YLQvdC40YbQsCIgItCd0LDQv9C+0LzQuNC90LDQvdC40Y8g0L4g0L/RgNC40ZHQvNC1INC70LXQutCw0YDRgdGC0LIg0Lgg0YPQstC10LTQvtC80LvQtdC90LjRjyDQvtC/0LXQutGD0L3QvtCyIiB7CiAgICAgICAgICAgIHNwYSA9IGNvbnRhaW5lciAiV2ViLdC60LvQuNC10L3RgiIgItCY0L3RgtC10YDRhNC10LnRgSDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8iICJTUEEgKNC/0LvQsNC9KSIgewogICAgICAgICAgICAgICAgdGFncyAiRnV0dXJlIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGFwaSA9IGNvbnRhaW5lciAiUkVTVCBBUEkiICJBdXRoLCBtZWRpY2F0aW9ucywgc2NoZWR1bGVzLCBndWFyZGlhbnMsIG5vdGlmaWNhdGlvbnMiICJGYXN0QVBJIC8gUHl0aG9uIiB7CiAgICAgICAgICAgICAgICBhdXRoID0gY29tcG9uZW50ICJBdXRoIiAi0KDQtdCz0LjRgdGC0YDQsNGG0LjRjywg0LvQvtCz0LjQvSwgY29va2llLdGB0LXRgdGB0LjQuCIgImF1dGgucHkiCiAgICAgICAgICAgICAgICByb3V0ZXMgPSBjb21wb25lbnQgIkFQSSBSb3V0ZXMiICJSRVNULdGN0L3QtNC/0L7QuNC90YLRiyIgImFwaS5weSIKICAgICAgICAgICAgICAgIGRiQWNjZXNzID0gY29tcG9uZW50ICJEYXRhIEFjY2VzcyIgItCX0LDQv9GA0L7RgdGLINC6IFBvc3RncmVTUUwiICJkYi5weSIKICAgICAgICAgICAgICAgIGF1dGggLT4gZGJBY2Nlc3MgItCY0YHQv9C+0LvRjNC30YPQtdGCIgogICAgICAgICAgICAgICAgcm91dGVzIC0+IGF1dGggItCf0YDQvtCy0LXRgNGP0LXRgiDRgdC10YHRgdC40Y4iCiAgICAgICAgICAgICAgICByb3V0ZXMgLT4gZGJBY2Nlc3MgItCY0YHQv9C+0LvRjNC30YPQtdGCIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGJvdCA9IGNvbnRhaW5lciAiVGVsZWdyYW0t0LHQvtGCIiAi0J/RgNC40LLRj9C30LrQsCBjaGF0X2lkLCDQvtC/0YDQvtGBINC+0YfQtdGA0LXQtNC4INGD0LLQtdC00L7QvNC70LXQvdC40LkiICJQeXRob24iIHsKICAgICAgICAgICAgICAgIGJvdENvcmUgPSBjb21wb25lbnQgIkJvdCBDb3JlIiAiUG9sbGluZywgL3N0YXJ0LCDQvtGC0L/RgNCw0LLQutCwINGB0L7QvtCx0YnQtdC90LjQuSIgInRlbGVncmFtX2JvdC5weSIKICAgICAgICAgICAgICAgIGJvdERiID0gY29tcG9uZW50ICJEYXRhIEFjY2VzcyIgItCe0YfQtdGA0LXQtNGMINGD0LLQtdC00L7QvNC70LXQvdC40LksIGNoYXRfaWQiICJkYi5weSIKICAgICAgICAgICAgICAgIGJvdENvcmUgLT4gYm90RGIgItCY0YHQv9C+0LvRjNC30YPQtdGCIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGRiID0gY29udGFpbmVyICLQkdCw0LfQsCDQtNCw0L3QvdGL0YUiICJ1c2Vycywgc2Vzc2lvbnMsIG1lZGljYXRpb25zLCBzY2hlZHVsZXMsIG5vdGlmaWNhdGlvbnMiICJQb3N0Z3JlU1FMIDE2IiB7CiAgICAgICAgICAgICAgICB0YWdzICJEYXRhYmFzZSIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgc3BhIC0+IGFwaSAi0JLRi9C30YvQstCw0LXRgiIgIkhUVFBTL0pTT04iCiAgICAgICAgICAgIGFwaSAtPiBkYiAi0KfQuNGC0LDQtdGCINC4INC30LDQv9C40YHRi9Cy0LDQtdGCIiAiU1FML1RDUCIKICAgICAgICAgICAgYm90IC0+IGRiICLQp9C40YLQsNC10YIg0Lgg0LfQsNC/0LjRgdGL0LLQsNC10YIiICJTUUwvVENQIgogICAgICAgIH0KCiAgICAgICAgdGVsZWdyYW0gPSBzb2Z0d2FyZVN5c3RlbSAiVGVsZWdyYW0iICLQnNC10YHRgdC10L3QtNC20LXRgCDQtNC70Y8g0YPQstC10LTQvtC80LvQtdC90LjQuSDQvtC/0LXQutGD0L3QvtCyIiB7CiAgICAgICAgICAgIHRhZ3MgIkV4dGVybmFsIgogICAgICAgIH0KCiAgICAgICAgdXNlciAtPiBwaWxsYm94ICLQmNGB0L/QvtC70YzQt9GD0LXRgiIKICAgICAgICBndWFyZGlhbiAtPiB0ZWxlZ3JhbSAi0KfQuNGC0LDQtdGCINGD0LLQtdC00L7QvNC70LXQvdC40Y8iCiAgICAgICAgcGlsbGJveCAtPiB0ZWxlZ3JhbSAi0J7RgtC/0YDQsNCy0LvRj9C10YIg0YPQstC10LTQvtC80LvQtdC90LjRjyIgIkhUVFBTIgoKICAgICAgICBwcm9kdWN0aW9uID0gZGVwbG95bWVudEVudmlyb25tZW50ICJQcm9kdWN0aW9uIiB7CiAgICAgICAgICAgIGRlcGxveW1lbnROb2RlIHNlcnZlciAi0KHQtdGA0LLQtdGAIiAiWWFuZGV4IENsb3VkIFZNIiAiVWJ1bnR1IiB7CiAgICAgICAgICAgICAgICBkZXBsb3ltZW50Tm9kZSBuZ2lueE5vZGUgIm5naW54IiAiVExTIHRlcm1pbmF0aW9uLCByZXZlcnNlIHByb3h5IiAibmdpbngiCiAgICAgICAgICAgICAgICBkZXBsb3ltZW50Tm9kZSBhcGlTZXJ2aWNlICJwaWxsYm94LWFwaSIgIkZhc3RBUEkgKyB1dmljb3JuIiAic3lzdGVtZCIgewogICAgICAgICAgICAgICAgICAgIGNvbnRhaW5lckluc3RhbmNlIHBpbGxib3guYXBpCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICBkZXBsb3ltZW50Tm9kZSBkYlNlcnZpY2UgIlBvc3RncmVTUUwiICLQpdGA0LDQvdC10L3QuNC1INC00LDQvdC90YvRhSIgIlBvc3RncmVTUUwgMTYiIHsKICAgICAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSBwaWxsYm94LmRiCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICBkZXBsb3ltZW50Tm9kZSBib3RTZXJ2aWNlICJwaWxsYm94LWJvdCIgIlRlbGVncmFtIHBvbGxpbmciICJzeXN0ZW1kICjQv9C70LDQvSkiIHsKICAgICAgICAgICAgICAgICAgICBjb250YWluZXJJbnN0YW5jZSBwaWxsYm94LmJvdAogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBzeXN0ZW1Db250ZXh0IHBpbGxib3ggIlN5c3RlbUNvbnRleHQiIHsKICAgICAgICAgICAgdGl0bGUgItCa0L7QvdGC0LXQutGB0YIg0YHQuNGB0YLQtdC80YsiCiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgfQoKICAgICAgICBjb250YWluZXIgcGlsbGJveCAiQ29udGFpbmVycyIgewogICAgICAgICAgICB0aXRsZSAi0JrQvtC90YLQtdC50L3QtdGA0YsiCiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IHRiCiAgICAgICAgfQoKICAgICAgICBjb21wb25lbnQgcGlsbGJveC5hcGkgIkFwaUNvbXBvbmVudHMiIHsKICAgICAgICAgICAgdGl0bGUgItCa0L7QvNC/0L7QvdC10L3RgtGLIFJFU1QgQVBJIgogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCBscgogICAgICAgIH0KCiAgICAgICAgY29tcG9uZW50IHBpbGxib3guYm90ICJCb3RDb21wb25lbnRzIiB7CiAgICAgICAgICAgIHRpdGxlICLQmtC+0LzQv9C+0L3QtdC90YLRiyBUZWxlZ3JhbS3QsdC+0YLQsCIKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgbHIKICAgICAgICB9CgogICAgICAgIGRlcGxveW1lbnQgcGlsbGJveCBwcm9kdWN0aW9uICJQcm9kdWN0aW9uRGVwbG95bWVudCIgewogICAgICAgICAgICB0aXRsZSAi0J/RgNC+0LTQsNC60YjQtdC9IChwaTExYm94LnJ1KSIKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgdGIKICAgICAgICB9CgogICAgICAgIHN0eWxlcyB7CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgc2hhcGUgUGVyc29uCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiU29mdHdhcmUgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMxMTY4YmQKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb250YWluZXIiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzQzOGRkNQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbXBvbmVudCIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjODViYmYwCiAgICAgICAgICAgICAgICBjb2xvciAjMDAwMDAwCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRGF0YWJhc2UiIHsKICAgICAgICAgICAgICAgIHNoYXBlIEN5bGluZGVyCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRXh0ZXJuYWwiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzk5OTk5OQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkZ1dHVyZSIgewogICAgICAgICAgICAgICAgb3BhY2l0eSA1MAogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICB0aGVtZSBkZWZhdWx0CiAgICB9CgogICAgY29uZmlndXJhdGlvbiB7CiAgICAgICAgc2NvcGUgc29mdHdhcmVzeXN0ZW0KICAgIH0KCn0=",
+    "structurizr.inspection.info" : "0",
+    "structurizr.inspection.ignore" : "0",
+    "structurizr.inspection.warning" : "0"
+  },
+  "views" : {
+    "componentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "5",
+      "elements" : [ {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ApiComponents",
+      "name" : "Component View: Таблетница - REST API",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "10"
+      }, {
+        "id" : "11"
+      }, {
+        "id" : "9"
+      } ],
+      "title" : "Компоненты REST API"
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "12",
+      "elements" : [ {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "BotComponents",
+      "name" : "Component View: Таблетница - Telegram-бот",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "15"
+      } ],
+      "title" : "Компоненты Telegram-бота"
+    } ],
+    "configuration" : {
+      "styles" : {
+        "elements" : [ {
+          "background" : "#85bbf0",
+          "color" : "#000000",
+          "tag" : "Component"
+        }, {
+          "background" : "#438dd5",
+          "color" : "#ffffff",
+          "tag" : "Container"
+        }, {
+          "shape" : "Cylinder",
+          "tag" : "Database"
+        }, {
+          "background" : "#999999",
+          "color" : "#ffffff",
+          "tag" : "External"
+        }, {
+          "opacity" : 50,
+          "tag" : "Future"
+        }, {
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "background" : "#1168bd",
+          "color" : "#ffffff",
+          "tag" : "Software System"
+        } ]
+      },
+      "terminology" : { },
+      "themes" : [ "https://static.structurizr.com/themes/default/theme.json" ]
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "elements" : [ {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Containers",
+      "name" : "Container View: Таблетница",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "17"
+      }, {
+        "id" : "18"
+      }, {
+        "id" : "19"
+      } ],
+      "softwareSystemId" : "3",
+      "title" : "Контейнеры"
+    } ],
+    "deploymentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "elements" : [ {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "environment" : "Production",
+      "key" : "ProductionDeployment",
+      "name" : "Deployment View: Таблетница - Production",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "30"
+      }, {
+        "id" : "33"
+      } ],
+      "softwareSystemId" : "3",
+      "title" : "Продакшен (pi11box.ru)"
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "SystemContext",
+      "name" : "System Context View: Таблетница",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "21"
+      }, {
+        "id" : "23"
+      } ],
+      "softwareSystemId" : "3",
+      "title" : "Контекст системы"
+    } ]
+  }
+}

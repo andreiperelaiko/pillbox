@@ -1,11 +1,12 @@
 import type { ScheduleItem } from '../types';
 import type { GroupedIntakeView } from '../types';
+import { parseApiDateTime } from './dateUtils';
 
 /** Группирует приёмы по дате-времени (intake_at) для отображения в календаре и карточках. */
 export function scheduleItemsToGroupedViews(items: ScheduleItem[]): GroupedIntakeView[] {
   const byTime = new Map<number, ScheduleItem[]>();
   for (const item of items) {
-    const t = new Date(item.intake_at).getTime();
+    const t = parseApiDateTime(item.intake_at).getTime();
     if (!byTime.has(t)) byTime.set(t, []);
     byTime.get(t)!.push(item);
   }

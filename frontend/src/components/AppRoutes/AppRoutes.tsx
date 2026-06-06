@@ -10,6 +10,7 @@ import { HomePage } from '../../pages/HomePage/HomePage';
 import { MedicationsPage } from '../../pages/MedicationsPage/MedicationsPage';
 import { CaregiversPage } from '../../pages/CaregiversPage/CaregiversPage';
 import { GuardiansAttachPage } from '../../pages/GuardiansAttachPage/GuardiansAttachPage';
+import { GuardianInvitePage } from '../../pages/GuardianInvitePage/GuardianInvitePage';
 import { AddIntakePage } from '../../pages/AddIntakePage/AddIntakePage';
 import { DayIntakesPage } from '../../pages/DayIntakesPage/DayIntakesPage';
 import { SettingsPage } from '../../pages/SettingsPage/SettingsPage';
@@ -56,6 +57,7 @@ export const AppRoutes = () => {
           <Route path="/medications" element={<MedicationsPage />} />
           <Route path="/caregivers" element={<CaregiversPage />} />
           <Route path="/guardians/attach" element={<GuardiansAttachPage />} />
+          <Route path="/guardians/invite" element={<GuardianInvitePage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>

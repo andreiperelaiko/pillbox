@@ -24,9 +24,14 @@ export const CaregiversPage = () => {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Опекуны/Подопечные</h1>
-        <Button type="button" onClick={() => navigate('/guardians/attach')}>
-          Стать опекуном
-        </Button>
+        <div className={styles.headerActions}>
+          <Button type="button" variant="secondary" onClick={() => navigate('/guardians/invite')}>
+            Пригласить опекуна
+          </Button>
+          <Button type="button" onClick={() => navigate('/guardians/attach')}>
+            Стать опекуном
+          </Button>
+        </div>
       </div>
 
       <div className={styles.sectionsGrid}>

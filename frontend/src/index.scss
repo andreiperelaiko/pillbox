@@ -1,3 +1,5 @@
+@use './styles/theme';
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,16 +12,14 @@ body {
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #333;
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  body {
-    font-size: 16px;
-  }
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
 }
 
 #root {
   min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
 }

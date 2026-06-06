@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { usersApi } from '../../api/users';
 import type { UserPublicResponse } from '../../api/users';
 import { attachAsGuardian } from '../../store/slices/guardiansSlice';
@@ -19,6 +19,7 @@ type Notification = { type: 'success' | 'error'; message: string } | null;
 export const GuardiansAttachPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(state => state.auth.user);
 
   const [email, setEmail] = useState('');
   const [relationship, setRelationship] = useState('Опекун');
@@ -41,19 +42,32 @@ export const GuardiansAttachPage = () => {
     setErrors(fieldErrors);
     if (hasErrors(fieldErrors)) return;
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    if (currentUser?.email && trimmedEmail === currentUser.email.toLowerCase()) {
+      setNotification({
+        type: 'error',
+        message:
+          'Нельзя стать опекуном самого себя. Введите email человека, за которым вы хотите следить.',
+      });
+      return;
+    }
     setLoading(true);
     try {
       const user = await usersApi.getByEmail(trimmedEmail);
       setAddedUser(user);
-      await dispatch(
+      const invite = await dispatch(
         attachAsGuardian({
           patientUserId: user.id,
           data: { relationship: relationship.trim() || null },
         })
       ).unwrap();
       setSuccess(true);
-      setNotification({ type: 'success', message: 'Вы успешно добавлены как опекун.' });
+      setNotification({
+        type: 'success',
+        message:
+          invite?.message ||
+          'Запрос отправлен. Вы и подопечный должны подтвердить его в Telegram (@p111boxbot).',
+      });
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Не удалось привязаться как опекун. Возможно, пользователь с таким email не найден.';
@@ -68,9 +82,10 @@ export const GuardiansAttachPage = () => {
   if (success) {
     return (
       <div className={styles.page}>
-        <h1 className={styles.title}>Вы стали опекуном</h1>
+        <h1 className={styles.title}>Запрос отправлен</h1>
         <p className={styles.message}>
-          Теперь вы будете получать уведомления о пропущенных приёмах этого пользователя.
+          Подтвердите в Telegram (@p111boxbot), что готовы стать опекуном. Связь установится,
+          когда подтвердите и вы, и подопечный.
         </p>
         {addedUser && (
           <div className={styles.addedUserCard}>
@@ -99,8 +114,9 @@ export const GuardiansAttachPage = () => {
     <div className={styles.page}>
       <h1 className={styles.title}>Стать опекуном</h1>
       <p className={styles.message}>
-        Введите email пользователя, опекуном которого вы хотите стать. После подтверждения вы будете
-        получать уведомления о его пропущенных приёмах.
+        Введите email <strong>подопечного</strong>. После отправки подопечный получит запрос в
+        Telegram (@p111boxbot) и должен подтвердить его. У подопечного должен быть привязан
+        Telegram.
       </p>
 
       {notification && (

@@ -63,6 +63,12 @@
   margin-bottom: 16px;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (min-width: 768px) {
   .header {
     margin-bottom: 24px;
@@ -75,7 +81,7 @@
   .header {
     margin-bottom: 28px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-border);
   }
 }
 

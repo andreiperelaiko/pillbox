@@ -17,7 +17,7 @@ export const getIntakeStatus = (
     return 'completed';
   }
   if (isPast && hasUnconfirmed) {
-    const delayMs = (settings.notificationDelayMinutes || 30) * 60 * 1000;
+    const delayMs = (settings.notificationDelayMinutes || 1) * 60 * 1000;
     if (now - intake.dateTime > delayMs) return 'missed';
   }
   return 'pending';

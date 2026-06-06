@@ -1,2 +1,7 @@
 venv
 .env
+.env.test
+docs/likec4/dist
+.pytest_cache
+.coverage
+htmlcov/

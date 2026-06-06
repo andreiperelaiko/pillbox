@@ -1,7 +1,7 @@
 // Верхняя шапка: логотип и на десктопе — текстовые ссылки
 .header {
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   padding: 12px 16px;
   padding-top: calc(12px + env(safe-area-inset-top));
   padding-left: calc(16px + env(safe-area-inset-left));
@@ -29,13 +29,13 @@
 .logoTitle {
   font-size: 18px;
   font-weight: 700;
-  color: #2196f3;
+  color: var(--color-primary);
   line-height: 1.2;
 }
 
 .logoTagline {
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-muted);
   line-height: 1.2;
 }
 
@@ -77,7 +77,7 @@
     display: inline-flex;
     align-items: center;
     text-decoration: none;
-    color: #666;
+    color: var(--color-text-muted);
     font-weight: 500;
     border-bottom: 2px solid transparent;
     white-space: nowrap;
@@ -85,13 +85,13 @@
     -webkit-tap-highlight-color: transparent;
 
     &:hover {
-      color: #2196f3;
+      color: var(--color-primary);
     }
   }
 
   .linkDesktop.active {
-    color: #2196f3;
-    border-bottom-color: #2196f3;
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
   }
 }
 
@@ -101,8 +101,8 @@
   align-items: stretch;
   justify-content: space-around;
   gap: 4px;
-  background: white;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
   padding: 8px 4px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
   padding-left: calc(4px + env(safe-area-inset-left));
@@ -130,18 +130,18 @@
   padding: 10px 4px;
   min-height: 52px;
   text-decoration: none;
-  color: #666;
+  color: var(--color-text-muted);
   -webkit-tap-highlight-color: transparent;
   border-radius: 8px;
   transition: color 0.2s, background 0.2s;
 
   &:hover {
-    color: #2196f3;
+    color: var(--color-primary);
   }
 }
 
 .linkIcon.active {
-  color: #2196f3;
+  color: var(--color-primary);
 }
 
 .icon {
